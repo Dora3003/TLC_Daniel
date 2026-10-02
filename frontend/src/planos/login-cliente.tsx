@@ -47,9 +47,6 @@ export function PaginaLoginCliente({ mensagem }: { mensagem: string | null }) {
           </label>
           <button type="submit">Entrar</button>
           <p className="dica">Use o token enviado para acessar o painel.</p>
-          <p className="dica">
-            <LinkInterno href="/atendimento">Acesso do atendente</LinkInterno>
-          </p>
         </form>
       </div>
     </main>

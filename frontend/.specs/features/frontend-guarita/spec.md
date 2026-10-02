@@ -125,7 +125,7 @@ Tema claro, sem modo escuro. Página creme, faixa superior rosa com a marca **Au
 
 Coluna estreita, no máximo cerca de 24rem, centralizada.
 
-1. **`/` — Login.** Cartão com a marca circular, título AutoPark, texto “Acesse sua conta”, campo **Token**, botão **Entrar** e a dica “Use o token enviado para acessar o painel.” O token tem 7 letras ou números. Um link discreto leva ao acesso do atendente.
+1. **`/` — Login.** Cartão com a marca circular, título AutoPark, texto “Acesse sua conta”, campo **Token**, botão **Entrar** e a dica “Use o token enviado para acessar o painel.” O token tem 7 letras ou números. 
 2. **`/cliente/planos` — Tabela de valores.** Abas **Tabela de valores** e **Pagamento**. Cartão com marca, subtítulo, regra “R$ 5,00 por hora. Mínimo de 1 hora.”, bloco **Sua estadia** (placa, tempo, valor, status do ticket) e linhas de referência 1h–5h.
 3. **`/cliente/pagamento` — Pagamento.** As mesmas abas e o mesmo cabeçalho do cartão. Campo **Token** somente leitura, botão **Gerar QR Code** e a orientação de uso do token. QR e **Copiar código** aparecem só quando a API devolve esses dados. **Gerar QR Code Multa** aparece só quando a API indica cobrança adicional.
 

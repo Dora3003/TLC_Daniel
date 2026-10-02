@@ -16,8 +16,10 @@ import {
 } from '../planos/multa.ts';
 import {
   codigosDoPagamento,
+  imagemQrDaUrl,
   pagamentoConfirmado,
   pagarUmaVez,
+  urlConfirmacaoPagamento,
 } from '../planos/pagamento.ts';
 import { decidirRevisao, podeAvancar } from '../planos/selecao.ts';
 
@@ -121,9 +123,10 @@ describe('PARK-01 a PARK-27', () => {
     assert.equal(reservarEnvio(trava), true);
   });
 
-  it('PARK-09 ignora QR e código ausentes e usa só o que a API devolve', () => {
+  it('PARK-09 gera QR com link que confirma o pagamento', () => {
     assert.deepEqual(codigosDoPagamento({}), { qrCode: null, codigo: null });
     assert.equal(codigosDoPagamento({ codigo: ' PIX-1 ' }).codigo, 'PIX-1');
+    assert.match(imagemQrDaUrl(urlConfirmacaoPagamento('https://app.local', 'U3T98LX')), /qrserver/);
   });
 
   it('PARK-10 deixa a lista vazia sem pagamento confirmado', () => {
