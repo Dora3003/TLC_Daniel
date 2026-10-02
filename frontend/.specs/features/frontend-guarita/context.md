@@ -24,10 +24,13 @@ O campo Token do protótipo é a entrada do cliente: o mesmo token de 7 caracter
 
 | Dado | Fonte oficial |
 |---|---|
-| Planos, preços, validade e disponibilidade | API de catálogo/estacionamento |
+| Valor da estadia, status e multa do ticket | `GET /api/tickets/:token`, pagamentos/multas |
+| Tabela de valores (referência por hora) | Catálogo local AD-004 (`tabela-valores.ts`), não `/api/planos` |
 | Meio de pagamento, QR Code e status | API de pagamento/checkout |
 | Excedente e valor da cobrança adicional | backend de estacionamento/faturamento |
-| Ocupação e veículos alocados | API operacional |
+| Ocupadas no pátio | `GET /api/ativos` (contagem) |
+| Capacidade/disponíveis (painel) | `CAPACIDADE_PATIO` no front até contrato de lotação |
+| Veículos alocados | `GET /api/ativos`; identificador na UI = `token` |
 | Sessão e papéis | autenticação/autorização existente |
 
 O frontend pode reter seleção e identificador de tentativa temporariamente, mas não pode calcular tarifa/multa, inferir pagamento ou decidir disponibilidade.
@@ -65,7 +68,7 @@ Os nomes acima são conceituais. Usar apenas os nomes reais do contrato.
 
 ## 6. Regras de implementação
 
-- Não hardcodar preços, QR Codes, códigos Pix, vagas, placas, multas ou horários.
+- Não hardcodar QR Codes, códigos Pix, placas ou multas. A tarifa por hora na tabela informativa segue AD-004; capacidade do pátio é parâmetro documentado (FE-DEC-09).
 - Montar as telas na paleta e na estrutura da seção 11 de `design.md`: faixa rosa, fundo creme, cartão rosa-claro, sem o tema roxo ou escuro do scaffold.
 - Não expor payload, stack trace, IDs sensíveis ou mensagens HTTP ao usuário.
 - Desabilitar ações em submissão, mas usar idempotência da API quando disponível.

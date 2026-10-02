@@ -42,48 +42,23 @@ describe('integrações da API', () => {
     assert.equal(ticket.valorAtual, 5);
   });
 
-  it('deve listar o catálogo em /api/planos', async () => {
-    const { http, chamadas } = httpDeTeste({
-      status: 200,
-      corpo: [
-        {
-          id: '1h',
-          nome: '1 hora',
-          tipo: '1h',
-          preco: 5,
-          moeda: 'BRL',
-          validade: '1 hora',
-          disponivel: true,
-          regras: 'Valor oficial.',
-        },
-      ],
-    });
+  it('deve listar a tabela de valores oficial sem chamar /api/planos', async () => {
+    const { http, chamadas } = httpDeTeste({ status: 200, corpo: [] });
     const api = criarApiCliente(http, { papel: 'cliente', token: 'U3T98LX' });
     const planos = await api.listarPlanos();
-    assert.equal(chamadas[0]?.url, 'http://localhost:3000/api/planos');
+    assert.equal(chamadas.length, 0);
     assert.equal(planos[0]?.preco, 5);
     assert.equal(planos[0]?.disponivel, true);
+    assert.ok(planos.length >= 4);
   });
 
-  it('deve revalidar o plano pelo id retornado no catálogo', async () => {
-    const { http, chamadas } = httpDeTeste({
-      status: 200,
-      corpo: {
-        id: '5h',
-        nome: '5 horas',
-        tipo: '5h',
-        preco: 25,
-        moeda: 'BRL',
-        validade: '5 horas',
-        disponivel: true,
-        regras: 'Valor oficial.',
-      },
-    });
+  it('deve revalidar o plano pelo id da tabela oficial', async () => {
+    const { http, chamadas } = httpDeTeste({ status: 200, corpo: {} });
     const api = criarApiCliente(http, { papel: 'cliente', token: 'U3T98LX' });
     const plano = await api.obterPlano('5h');
-    assert.equal(chamadas[0]?.url, 'http://localhost:3000/api/planos/5h');
+    assert.equal(chamadas.length, 0);
     assert.equal(plano.preco, 25);
-    assert.equal(plano.validade, '5 horas');
+    assert.equal(plano.validade, 'Até 5 horas');
   });
 
   it('deve pagar a estadia sem corpo e sem outro token', async () => {
@@ -186,17 +161,20 @@ describe('integrações da API', () => {
     assert.equal(chamadas[0]?.init?.body, JSON.stringify({ placa: 'ABC-1234', motoristaNome: 'Ana' }));
   });
 
-  it('deve consultar a ocupação oficial em /api/ocupacao', async () => {
+  it('deve derivar a ocupação a partir de /api/ativos', async () => {
     const { http, chamadas } = httpDeTeste({
       status: 200,
-      corpo: { ocupadas: 2, capacidade: null, disponiveis: null },
+      corpo: [
+        { id: '1', placa: 'ABC-1234', motoristaNome: 'Ana', token: 'AAAAAAA', entradaEm: '2026-01-01T00:00:00.000Z', status: 'ativo', tempoDecorridoMinutos: 1 },
+        { id: '2', placa: 'XYZ-9876', motoristaNome: 'Bia', token: 'BBBBBBB', entradaEm: '2026-01-01T00:00:00.000Z', status: 'ativo', tempoDecorridoMinutos: 2 },
+      ],
     });
     const api = criarApiAtendente(http);
     const ocupacao = await api.obterOcupacao();
-    assert.equal(chamadas[0]?.url, 'http://localhost:3000/api/ocupacao');
+    assert.equal(chamadas[0]?.url, 'http://localhost:3000/api/ativos');
     assert.equal(ocupacao.ocupadas, 2);
-    assert.equal(ocupacao.capacidade, null);
-    assert.equal(ocupacao.disponiveis, null);
+    assert.equal(ocupacao.capacidade, 20);
+    assert.equal(ocupacao.disponiveis, 18);
   });
 
   it('deve tratar pátio vazio como lista vazia', async () => {
@@ -214,8 +192,33 @@ describe('integrações da API', () => {
     assert.equal(chamadas[0]?.url, 'http://localhost:3000/api/historico/ABC-1234');
   });
 
-  it('deve limitar o atendente a entrada, ocupação, pátio e histórico', () => {
+  it('deve registrar saída em /api/saida', async () => {
+    const { http, chamadas } = httpDeTeste({
+      status: 200,
+      corpo: {
+        id: '1',
+        placa: 'ABC1234',
+        entradaEm: '2026-09-27T12:00:00.000Z',
+        saidaEm: '2026-09-27T12:30:00.000Z',
+        duracaoMinutos: 30,
+        valorCobrado: 5,
+        status: 'finalizado',
+      },
+    });
+    const api = criarApiAtendente(http);
+    await api.registrarSaida('U3T98LX');
+    assert.equal(chamadas[0]?.url, 'http://localhost:3000/api/saida');
+    assert.equal(chamadas[0]?.init?.body, JSON.stringify({ token: 'U3T98LX' }));
+  });
+
+  it('deve limitar o atendente a entrada, saída, ocupação, pátio e histórico', () => {
     const api = criarApiAtendente({} as Http);
-    assert.deepEqual(Object.keys(api).sort(), ['historico', 'listarAtivos', 'obterOcupacao', 'registrarEntrada']);
+    assert.deepEqual(Object.keys(api).sort(), [
+      'historico',
+      'listarAtivos',
+      'obterOcupacao',
+      'registrarEntrada',
+      'registrarSaida',
+    ]);
   });
 });

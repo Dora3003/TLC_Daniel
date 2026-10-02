@@ -82,3 +82,13 @@ export interface HistoricoItem {
   valorCobrado: number | null;
   status: StatusRegistro;
 }
+
+export interface SaidaResponse {
+  id: string;
+  placa: string;
+  entradaEm: string;
+  saidaEm: string;
+  duracaoMinutos: number;
+  valorCobrado: number | null;
+  status: 'finalizado';
+}

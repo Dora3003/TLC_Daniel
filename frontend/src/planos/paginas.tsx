@@ -26,6 +26,7 @@ export function PaginaPlanos({
 }) {
   const { navegar } = useNavegacao();
   const { estado, recarregar } = useConsulta('planos', () => api.listarPlanos(), listaVazia);
+  const ticket = useConsulta('planos-ticket', () => api.obterTicket());
 
   function continuar() {
     if (!podeAvancar(selecionado)) return;
@@ -34,30 +35,70 @@ export function PaginaPlanos({
 
   return (
     <section className="cartao cliente-cartao">
-      <p className="marca-redonda" aria-hidden="true">
-        AP
-      </p>
-      <h1>AutoPark</h1>
-      <p>Pague seu ticket pela aplicação</p>
-      <p className="periodo">Escolha o período de estacionamento</p>
-      {estado.tipo === 'loading' ? <p role="status">Carregando planos…</p> : null}
+      <header className="cliente-cabecalho">
+        <p className="marca-redonda" aria-hidden="true">
+          AP
+        </p>
+        <h1>AutoPark</h1>
+        <p className="cliente-subtitulo">Pague seu ticket pela aplicação</p>
+      </header>
+
+      <p className="periodo">Tabela de valores</p>
+      <p className="dica">R$ 5,00 por hora. Mínimo de 1 hora.</p>
+
+      {ticket.estado.tipo === 'ready' ? (
+        <section className="comprovante" aria-label="Valor atual do ticket">
+          <h2>Sua estadia</h2>
+          <dl className="lista-dados">
+            <div>
+              <dt>Placa</dt>
+              <dd>{ticket.estado.dados.placa}</dd>
+            </div>
+            <div>
+              <dt>Tempo</dt>
+              <dd>{ticket.estado.dados.duracaoMinutos} min</dd>
+            </div>
+            <div>
+              <dt>Valor atual</dt>
+              <dd>{formatarMoeda(ticket.estado.dados.valorAtual)}</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>
+                <span className="status-pill">{ticket.estado.dados.status}</span>
+              </dd>
+            </div>
+          </dl>
+        </section>
+      ) : null}
+      {ticket.estado.tipo === 'error' ? (
+        <div className="cartao-feedback">
+          <p role="alert">{ticket.estado.mensagem}</p>
+          <button type="button" className="botao-secundario" onClick={ticket.recarregar}>
+            Atualizar ticket
+          </button>
+        </div>
+      ) : null}
+
+      {estado.tipo === 'loading' ? <p role="status">Carregando tabela de valores…</p> : null}
       {estado.tipo === 'error' ? (
-        <>
+        <div className="cartao-feedback">
           <p role="alert">{estado.mensagem}</p>
           <button type="button" onClick={recarregar}>
             Tentar novamente
           </button>
-        </>
+        </div>
       ) : null}
-      {estado.tipo === 'empty' ? <p>Não há planos disponíveis no momento.</p> : null}
+      {estado.tipo === 'empty' ? <p>Não há valores disponíveis no momento.</p> : null}
       {estado.tipo === 'ready' ? (
         <form
+          className="formulario-cadastro"
           onSubmit={(evento) => {
             evento.preventDefault();
             continuar();
           }}
         >
-          <div className="planos" role="radiogroup" aria-label="Escolha um plano">
+          <div className="planos" role="radiogroup" aria-label="Tabela de valores por período">
             {estado.dados.map((plano) => (
               <button
                 key={plano.id}
@@ -72,15 +113,15 @@ export function PaginaPlanos({
                   <span className="plano-nome">{plano.nome}</span>
                   <span className="plano-validade">{plano.validade}</span>
                 </span>
-                <span>
-                  {formatarMoeda(plano.preco)}
-                  <span aria-hidden="true"> ›</span>
-                </span>
+                <span>{formatarMoeda(plano.preco)}</span>
               </button>
             ))}
           </div>
           <button type="submit" disabled={!podeAvancar(selecionado)}>
             Continuar para revisão
+          </button>
+          <button type="button" className="botao-secundario botao-largo" onClick={() => navegar('/cliente/pagamento')}>
+            Ir para pagamento
           </button>
         </form>
       ) : null}
@@ -125,13 +166,13 @@ export function PaginaRevisao({
 
   if (!plano) {
     return (
-      <main className="pagina">
+      <section className="cartao cliente-cartao">
         <h1>Revisão</h1>
-        <p>Selecione um plano para revisar.</p>
+        <p>Selecione um período na tabela de valores para revisar.</p>
         <button type="button" onClick={() => navegar('/cliente/planos')}>
-          Voltar aos planos
+          Voltar à tabela de valores
         </button>
-      </main>
+      </section>
     );
   }
 
@@ -143,29 +184,47 @@ export function PaginaRevisao({
     confirmacao.estado.dados.disponivel;
 
   return (
-    <main className="pagina">
-      <h1>Revisão</h1>
+    <section className="cartao cliente-cartao">
+      <header className="cliente-cabecalho">
+        <p className="marca-redonda" aria-hidden="true">
+          AP
+        </p>
+        <h1>Revisão</h1>
+        <p className="cliente-subtitulo">Confira os dados antes do pagamento</p>
+      </header>
       {ticket.estado.tipo === 'loading' ? <p role="status">Carregando dados do ticket…</p> : null}
       {ticket.estado.tipo === 'error' ? (
-        <>
+        <div className="cartao-feedback">
           <p role="alert">{ticket.estado.mensagem}</p>
           <button type="button" onClick={ticket.recarregar}>
             Tentar novamente
           </button>
-        </>
+        </div>
       ) : null}
-      <dl>
-        <dt>Placa</dt>
-        <dd>{ticket.estado.tipo === 'ready' ? ticket.estado.dados.placa : '—'}</dd>
-        <dt>Plano</dt>
-        <dd>{plano.nome}</dd>
-        <dt>Preço</dt>
-        <dd>{formatarMoeda(plano.preco)}</dd>
-        <dt>Validade</dt>
-        <dd>{plano.validade}</dd>
-        <dt>Regras</dt>
-        <dd>{plano.regras}</dd>
-      </dl>
+      <section className="comprovante">
+        <dl className="lista-dados">
+          <div>
+            <dt>Placa</dt>
+            <dd>{ticket.estado.tipo === 'ready' ? ticket.estado.dados.placa : '—'}</dd>
+          </div>
+          <div>
+            <dt>Período</dt>
+            <dd>{plano.nome}</dd>
+          </div>
+          <div>
+            <dt>Preço de referência</dt>
+            <dd>{formatarMoeda(plano.preco)}</dd>
+          </div>
+          <div>
+            <dt>Validade</dt>
+            <dd>{plano.validade}</dd>
+          </div>
+          <div>
+            <dt>Regras</dt>
+            <dd>{plano.regras}</dd>
+          </div>
+        </dl>
+      </section>
       <button
         type="button"
         onClick={() => void confirmacao.enviar()}
@@ -176,6 +235,6 @@ export function PaginaRevisao({
       {confirmacao.estado.tipo === 'error' ? <p role="alert">{confirmacao.estado.mensagem}</p> : null}
       {confirmado ? <p role="status">Dados confirmados.</p> : null}
       <BotaoPagamento confirmado={confirmado} />
-    </main>
+    </section>
   );
 }

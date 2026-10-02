@@ -58,19 +58,28 @@ export function PaginaMulta({
         <p>Não há cobrança adicional para este ticket.</p>
       ) : null}
       {pendente && ticketExibido && typeof ticketExibido.valorMulta === 'number' ? (
-        <>
-          <dl>
-            <dt>Placa</dt>
-            <dd>{ticketExibido.placa}</dd>
-            <dt>Status</dt>
-            <dd>{ticketExibido.status}</dd>
-            <dt>Valor da cobrança</dt>
-            <dd>{formatarMoeda(ticketExibido.valorMulta)}</dd>
+        <section className="comprovante">
+          <h2>Cobrança adicional</h2>
+          <dl className="lista-dados">
+            <div>
+              <dt>Placa</dt>
+              <dd>{ticketExibido.placa}</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>
+                <span className="status-pill">{ticketExibido.status}</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Valor da cobrança</dt>
+              <dd>{formatarMoeda(ticketExibido.valorMulta)}</dd>
+            </div>
           </dl>
           <button type="button" onClick={() => void pagamento.enviar()} disabled={ocupado}>
             Gerar QR Code Multa
           </button>
-        </>
+        </section>
       ) : null}
       {pagamento.estado.tipo === 'error' ? <p role="alert">{pagamento.estado.mensagem}</p> : null}
       {comprovante ? <ReciboMulta dados={comprovante} /> : null}
@@ -80,21 +89,35 @@ export function PaginaMulta({
 
 function ReciboMulta({ dados }: { dados: ComprovanteMultaDados }) {
   return (
-    <section aria-labelledby="titulo-comprovante-multa">
+    <section className="comprovante" aria-labelledby="titulo-comprovante-multa">
       <h2 id="titulo-comprovante-multa">Comprovante da cobrança adicional</h2>
-      <dl>
-        <dt>Identificador</dt>
-        <dd>{dados.identificador}</dd>
-        <dt>Placa</dt>
-        <dd>{dados.placa}</dd>
-        <dt>Status</dt>
-        <dd>{dados.status}</dd>
-        <dt>Valor</dt>
-        <dd>{formatarMoeda(dados.valor)}</dd>
-        <dt>Pago em</dt>
-        <dd>{formatarData(dados.pagoEm)}</dd>
-        <dt>Janela de saída</dt>
-        <dd>{formatarData(dados.janelaSaidaExpiraEm)}</dd>
+      <dl className="lista-dados">
+        <div>
+          <dt>Identificador</dt>
+          <dd>{dados.identificador}</dd>
+        </div>
+        <div>
+          <dt>Placa</dt>
+          <dd>{dados.placa}</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>
+            <span className="status-pill">{dados.status}</span>
+          </dd>
+        </div>
+        <div>
+          <dt>Valor</dt>
+          <dd>{formatarMoeda(dados.valor)}</dd>
+        </div>
+        <div>
+          <dt>Pago em</dt>
+          <dd>{formatarData(dados.pagoEm)}</dd>
+        </div>
+        <div>
+          <dt>Janela de saída</dt>
+          <dd>{formatarData(dados.janelaSaidaExpiraEm)}</dd>
+        </div>
       </dl>
     </section>
   );

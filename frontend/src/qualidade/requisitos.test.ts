@@ -207,9 +207,14 @@ describe('PARK-01 a PARK-27', () => {
     });
   });
 
-  it('PARK-20 lista id, placa e data e aceita pátio vazio', () => {
+  it('PARK-20 lista token, placa e data e aceita pátio vazio', () => {
     assert.deepEqual(linhasAlocacao([]), []);
-    assert.equal(linhasAlocacao([{ id: 'aloc-1', placa: 'ABC1234', entradaEm: '2026-09-27T12:00:00.000Z' }])[0]?.id, 'aloc-1');
+    assert.equal(
+      linhasAlocacao([
+        { token: 'U3T98LX', placa: 'ABC1234', motoristaNome: 'Ana', entradaEm: '2026-09-27T12:00:00.000Z' },
+      ])[0]?.id,
+      'U3T98LX',
+    );
   });
 
   it('PARK-21 preserva a mensagem de placa duplicada e não confirma a entrada', () => {
