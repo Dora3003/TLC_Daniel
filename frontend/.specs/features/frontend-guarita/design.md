@@ -2,16 +2,21 @@
 
 ## 1. Arquitetura funcional
 
-A solução terá áreas separadas por papel, protegidas pela autorização existente:
+A solução tem duas cascas visuais, separadas por papel. Cor, faixa, cartão e abas estão na seção 11.
 
 ```text
-Cliente
-  Planos -> Revisão -> Pagamento -> Comprovante
-                         |
-                         -> Cobrança adicional (quando API indicar excedente)
+Cliente (coluna estreita)
+  /  Login por token
+  /cliente/planos       Tabela de valores
+  /cliente/pagamento    Pagamento
+                          -> Gerar QR Code
+                          -> Gerar QR Code Multa (somente se a API indicar)
 
-Atendente
-  Dashboard de vagas -> Registrar veículo -> Veículos alocados
+Atendente (painel largo)
+  /atendimento          Login por e-mail e senha, se não houver sessão
+  /atendimento          Olá + Sair
+                          Vagas | Cadastrar Veículo
+                          Veículos Alocados
 ```
 
 A separação evita que uma tela do cliente exponha dados operacionais e que o atendente possa operar pagamentos de terceiros sem requisito explícito.
@@ -102,18 +107,19 @@ A UI deve apresentar `occupied`, `available`, `capacity` e `updatedAt` quando fo
 
 ## 6. Rotas conceituais
 
-Seguir os nomes e padrão reais do projeto. Possível mapeamento:
+Rotas reais da interface:
 
 ```text
-/estacionamento/planos
-/estacionamento/revisao
-/estacionamento/pagamento/:attemptId
-/estacionamento/contratacoes
-/estacionamento/contratacoes/:id
-/atendimento/estacionamento
+/                      login do cliente (token do ticket)
+/cliente/planos        tabela de valores
+/cliente/revisao       revisão, dentro da mesma coluna, sem aba própria
+/cliente/pagamento     pagamento da estadia e, se houver, da multa
+/atendimento           login do atendente ou painel único
 ```
 
-Cada rota operacional deve ter guarda de papel. O backend deve repetir essa validação.
+`/cliente/comprovante`, `/cliente/contratacoes` e `/cliente/multa` continuam acessíveis pela jornada, mas não ganham item na navegação. A navegação visível do cliente tem só **Tabela de valores** e **Pagamento**.
+
+Cada área exige a sessão correspondente. Cliente com token não abre `/atendimento`. Atendente autenticado não abre o pagamento de um ticket. A API não tem papéis; a separação é da experiência.
 
 ## 7. Tratamento de falhas
 
@@ -150,3 +156,22 @@ Registrar erros técnicos no mecanismo existente com IDs correlacionáveis, sem 
 - Pagamento e cadastro de veículo são idempotentes ou bloqueados por uma dependência explícita.
 - Estados de erro, vazio, carregamento e submissão estão previstos.
 - A interface é navegável por teclado e responsiva.
+- A cor e a estrutura seguem a seção 11, e não o tema roxo do scaffold Vite.
+
+## 11. Cor e estrutura visual
+
+Tema claro. Não aplicar `prefers-color-scheme: dark` nem a paleta roxa do template.
+
+| Token CSS | Valor | Onde |
+|---|---|---|
+| `--rosa` | `#f25497` | Faixa, botão, título do cartão, número da vaga, cabeçalho da tabela |
+| `--rosa-claro` | `#fde7f1` | Fundo do cartão |
+| `--creme` | `#fff6e4` | `body` e área da página |
+| `--text-h` | `#3b2432` | Saudação e títulos |
+| `--text` | `#5c4552` | Texto e dicas |
+
+A faixa (`.barra`) ocupa a largura, com “AutoPark” em branco. O cartão (`.cartao`) tem fundo `--rosa-claro`, borda `#f7c3da` e raio de 16px. A marca circular fica no topo do cartão de login e do cartão do cliente. Botão principal: fundo `--rosa`, texto branco, raio de 8px. **Sair** é texto rosa, sem fundo.
+
+Cliente: miolo centralizado, largura máxima de 24rem. Abas em pílula; a aba atual fica rosa com texto branco, a outra fica branca com texto rosa. Linha de plano: pílula branca, texto rosa, nome e validade à esquerda, preço à direita.
+
+Atendente: miolo até 1120px. No painel, a grade é `Vagas` e `Cadastrar Veículo` lado a lado; abaixo de 40rem, uma coluna. Os números de ocupadas e disponíveis são grandes e rosa. A tabela de alocados tem cabeçalho rosa com texto branco e linhas alternadas `#ffffff` e `#fff0f6`. As colunas visíveis são ID, Placa e Data de Alocação.

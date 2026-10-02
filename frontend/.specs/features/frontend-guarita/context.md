@@ -4,21 +4,21 @@
 
 Este documento orienta a implementação de `spec.md`. As decisões de solução ficam em `design.md`; a sequência executável fica em `tasks.md`.
 
-A referência visual fornecida apresenta dois produtos:
+A referência visual é o contrato de cor e de estrutura. Os dois produtos são:
 
-- Aplicação **cliente**: seleção de período, pagamento via QR Code/código e pagamento de multa.
-- Painel **atendente**: login, indicadores de vagas, cadastro de veículo e lista de veículos alocados.
+- Aplicação **cliente**: login por token, aba Tabela de valores e aba Pagamento, no cartão rosa estreito.
+- Painel **atendente**: login por e-mail e senha, e em seguida uma única tela com vagas, cadastro e lista.
 
-O protótipo é referência visual, não contrato de negócio. Preços, exemplos de placas, nomes e QR Codes nele exibidos não devem ser reaproveitados como dados reais.
+Preços, placas, nomes e QR Codes desenhados no protótipo não são dados. A estrutura da tela e a paleta da seção 11 de `design.md` devem ser seguidas.
 
 ## 2. Perfis e limite de acesso
 
 | Perfil | Pode acessar |
 |---|---|
-| Cliente | planos, revisão, pagamento, comprovantes, contratos e cobrança adicional própria |
-| Atendente | ocupação, cadastro de entrada e lista de veículos alocados na unidade autorizada |
+| Cliente | login em `/` com o token do ticket; tabela de valores, revisão, pagamento e cobrança adicional do próprio ticket |
+| Atendente | login em `/atendimento` com e-mail e senha; ocupação, cadastro de entrada e lista de veículos alocados |
 
-Autenticação e autorização devem reutilizar os mecanismos do projeto. Nunca criar um login paralelo só porque o protótipo contém um campo de token.
+O campo Token do protótipo é a entrada do cliente: o mesmo token de 7 caracteres do ticket, enviado como `/?token=`. Não criar outro identificador. O e-mail e a senha existem só na casca do atendente, porque a API não tem usuário nem JWT.
 
 ## 3. Fonte de verdade
 
@@ -66,6 +66,7 @@ Os nomes acima são conceituais. Usar apenas os nomes reais do contrato.
 ## 6. Regras de implementação
 
 - Não hardcodar preços, QR Codes, códigos Pix, vagas, placas, multas ou horários.
+- Montar as telas na paleta e na estrutura da seção 11 de `design.md`: faixa rosa, fundo creme, cartão rosa-claro, sem o tema roxo ou escuro do scaffold.
 - Não expor payload, stack trace, IDs sensíveis ou mensagens HTTP ao usuário.
 - Desabilitar ações em submissão, mas usar idempotência da API quando disponível.
 - Em retorno ambíguo ou recarregamento, consultar a tentativa existente; nunca criar novo pagamento automaticamente.
@@ -93,11 +94,13 @@ Exemplos:
 
 ## 9. Conflitos a resolver antes de implementar
 
-1. O “token” do protótipo é login, identificador de ticket ou código de pagamento?
+Os itens 1 e 5 estão decididos pela estrutura visual. Os demais continuam pendentes até o contrato da API.
+
+1. O token do protótipo é o identificador do ticket e também a credencial da área do cliente. O código copiável do pagamento só aparece se a API o devolver.
 2. A placa é obrigatória para contratar um plano e pagar excedente?
 3. Há uma ou várias unidades? Como o atendente é associado a uma unidade?
 4. Como a saída do veículo é registrada e quando o excedente é calculado?
-5. Pagamento por QR Code é Pix, outro método ou apenas representação visual?
+5. A tela de pagamento tem o botão “Gerar QR Code”, mas a imagem e o código só são renderizados com o que a API devolver. Não desenhar um Pix local.
 6. Atualização de vagas será manual, polling ou tempo real?
 
 Enquanto uma decisão bloquear uma integração, registrar a pendência no `tasks.md` em vez de assumir comportamento.

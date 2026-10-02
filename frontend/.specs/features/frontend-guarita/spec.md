@@ -2,10 +2,10 @@
 
 ## 1. Visão do produto
 
-A plataforma AutoPark possui duas jornadas autenticadas e independentes:
+A plataforma AutoPark possui duas jornadas autenticadas e independentes, no visual rosa e creme descrito na seção 8:
 
-- **Cliente:** consulta planos, escolhe um período de permanência, realiza o pagamento e consulta seu comprovante; se ultrapassar o limite contratado, consulta e paga a cobrança adicional.
-- **Atendente:** acompanha a ocupação do estacionamento, registra a entrada de veículos e consulta os veículos atualmente alocados.
+- **Cliente:** entra com o token do ticket, consulta a tabela de valores, paga a estadia e, se a API indicar, paga a cobrança adicional.
+- **Atendente:** entra com e-mail e senha, vê vagas ocupadas e disponíveis, cadastra um veículo e consulta os veículos alocados na mesma tela.
 
 A interface não calcula valores, disponibilidade, vencimentos ou multas. A API é a fonte de verdade para essas informações.
 
@@ -103,3 +103,37 @@ Os valores exibidos no protótipo (por exemplo, R$ 20,00) são apenas referênci
 | Cliente: excedente | PARK-11 a PARK-15 |
 | Atendente | PARK-16 a PARK-22 |
 | Qualidade e continuidade | PARK-23 a PARK-27 |
+
+## 8. Aparência e estrutura
+
+O protótipo define a cor e a organização das telas. Preços, placas, nomes de exemplo e QR Codes desenhados nele não são dados: esses valores continuam vindo da API.
+
+Tema claro, sem modo escuro. Página creme, faixa superior rosa com a marca **AutoPark** em branco, cartões rosa-claro com cantos arredondados e botões rosa com texto branco.
+
+| Token | Uso |
+|---|---|
+| `#f25497` | Faixa, botão principal, títulos do cartão e números de vagas |
+| `#fde7f1` | Fundo do cartão |
+| `#fff6e4` | Fundo da página |
+| `#3b2432` | Texto de título |
+| `#5c4552` | Texto corrente |
+| `#ffffff` | Linha de plano, campo e linha par da tabela |
+
+### Cliente
+
+Coluna estreita, no máximo cerca de 24rem, centralizada.
+
+1. **`/` — Login.** Cartão com a marca circular, título AutoPark, texto “Acesse sua conta”, campo **Token**, botão **Entrar** e a dica “Use o token enviado para acessar o painel.” O token tem 7 letras ou números. Um link discreto leva ao acesso do atendente.
+2. **`/cliente/planos` — Tabela de valores.** Duas abas em pílula: **Tabela de valores** e **Pagamento**. No cartão: marca, AutoPark, “Pague seu ticket pela aplicação” e “Escolha o período de estacionamento”. Cada plano é uma linha arredondada com nome, validade e preço retornados pela API.
+3. **`/cliente/pagamento` — Pagamento.** As mesmas abas e o mesmo cabeçalho do cartão. Campo **Token** somente leitura, botão **Gerar QR Code** e a orientação de uso do token. QR e **Copiar código** aparecem só quando a API devolve esses dados. **Gerar QR Code Multa** aparece só quando a API indica cobrança adicional.
+
+A revisão do plano, quando existir, permanece dentro dessa coluna, sem uma terceira aba.
+
+### Atendente
+
+Conteúdo mais largo, até cerca de 1120px.
+
+1. **`/atendimento` sem sessão — Login.** O mesmo cartão rosa, com **E-mail**, **Senha** e **Entrar**.
+2. **`/atendimento` com sessão — Painel.** Faixa AutoPark, saudação “Olá, {nome}!” e **Sair**. Abaixo, dois cartões lado a lado: **Vagas** (números grandes de ocupadas e disponíveis) e **Cadastrar Veículo**. Embaixo, o cartão **Veículos Alocados**, com tabela de ID, Placa e Data de Alocação. O cabeçalho da tabela é rosa e as linhas alternam branco e rosa bem claro.
+
+Em tela estreita, os dois cartões do painel ficam um abaixo do outro.
