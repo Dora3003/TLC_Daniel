@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { MarcaAutoPark } from '../app/marca.tsx';
 import { normalizarToken, tokenValido } from '../auth/token.ts';
 import { useNavegacao } from '../rotas/contexto-navegacao.ts';
+import { LinkInterno } from '../rotas/navegacao.tsx';
 
 export function PaginaLoginCliente({ mensagem }: { mensagem: string | null }) {
   const { navegar } = useNavegacao();
@@ -46,6 +47,9 @@ export function PaginaLoginCliente({ mensagem }: { mensagem: string | null }) {
           </label>
           <button type="submit">Entrar</button>
           <p className="dica">Use o token enviado para acessar o painel.</p>
+          <p className="dica">
+            <LinkInterno href="/atendimento">Acesso do atendente</LinkInterno>
+          </p>
         </form>
       </div>
     </main>
