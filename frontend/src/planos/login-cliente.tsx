@@ -2,7 +2,6 @@ import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { MarcaAutoPark } from '../app/marca.tsx';
 import { normalizarToken, tokenValido } from '../auth/token.ts';
-import { LinkInterno } from '../rotas/navegacao.tsx';
 import { useNavegacao } from '../rotas/contexto-navegacao.ts';
 
 export function PaginaLoginCliente({ mensagem }: { mensagem: string | null }) {
