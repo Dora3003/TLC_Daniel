@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test src/auth/acesso.test.ts src/auth/sessao.test.ts src/auth/login.test.ts src/api/integracao.test.ts src/planos/selecao.test.ts src/planos/pagamento.test.ts src/planos/plano-local.test.ts src/planos/contratacoes.test.ts src/planos/multa.test.ts src/atendimento/vagas.test.ts src/atendimento/entrada.test.ts src/atendimento/alocacoes.test.ts src/atendimento/acessibilidade.test.ts src/qualidade/requisitos.test.ts"
   },
   "dependencies": {
     "react": "^19.2.8",
