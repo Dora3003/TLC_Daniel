@@ -51,7 +51,7 @@ Impressão do ticket e QR são pressuposto: o cadastro devolve `token` e `loginU
 
 ## Deploy no Render
 
-O arquivo `render.yaml` configura um Web Service Docker para a API usando `backend/` como diretório raiz e `backend/Dockerfile`. O frontend ainda não está implementado como aplicação executável; neste momento, o Blueprint publica somente o backend.
+O arquivo `render.yaml` configura um Web Service Docker para a API usando o `Dockerfile` na raiz do repositório, com o código-fonte do backend em `backend/`. O frontend ainda não está implementado como aplicação executável; neste momento, o Blueprint publica somente o backend.
 
 No primeiro deploy, informe no Render:
 
