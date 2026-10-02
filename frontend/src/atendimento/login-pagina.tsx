@@ -63,6 +63,9 @@ export function PaginaLogin({
             />
           </label>
           <button type="submit">Entrar</button>
+          <p className="dica">
+            Use seu e-mail e senha para acessar o painel. Conta local: {EMAIL_ATENDENTE} / {SENHA_ATENDENTE}.
+          </p>
         </form>
       </div>
     </main>
