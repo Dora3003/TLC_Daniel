@@ -29,7 +29,7 @@ Localizar guards de rota/papel, cliente HTTP, componentes de formulário/feedbac
 
 ## Registro da descoberta (T-001 e T-002)
 
-Contrato oficial: OpenAPI `0.1.0` em `GET /api/openapi.json`. Base hospedada `https://tlc-daniel.vercel.app` (Swagger em `/api/docs`). A base local continua `http://localhost:3000`. CORS da hospedagem aceita `http://localhost:5173`. Erro padrão: `{ "erro": string, "mensagem": string, "valorMulta"?: number }`.
+Contrato oficial: OpenAPI `0.1.0` em `GET /api/openapi.json`. Base hospedada `https://tlc-daniel-xgxb.onrender.com` (Swagger em `/api/docs`). A base local continua `http://localhost:3000`. CORS da hospedagem aceita `http://localhost:5173`. Erro padrão: `{ "erro": string, "mensagem": string, "valorMulta"?: number }`.
 
 A spec de planos (1h, 5h, diária, mensal), checkout com QR/Pix, papéis e capacidade de vagas **não existe** nesta API. Não criar esses endpoints no frontend.
 
