@@ -2,8 +2,12 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
+const connectionString = process.env.DATABASE_URL;
+const exigeSsl = connectionString?.includes('sslmode=require') ?? false;
+
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString,
+  ssl: exigeSsl ? { rejectUnauthorized: false } : undefined,
 });
 
 export async function checkConnection(): Promise<boolean> {
