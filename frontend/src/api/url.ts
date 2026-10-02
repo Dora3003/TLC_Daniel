@@ -3,5 +3,5 @@ export function urlDaApi(): string {
   if (typeof configurada === 'string' && configurada.trim() !== '') {
     return configurada.replace(/\/$/, '');
   }
-  return 'https://tlc-daniel.vercel.app';
+  return 'https://tlc-daniel-xgxb.onrender.com';
 }
