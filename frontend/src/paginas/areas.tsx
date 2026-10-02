@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { ApiAtendente } from '../api/atendente.ts';
 import { PaginaVeiculos } from '../atendimento/alocacoes-pagina.tsx';
 import { PaginaEntradaVeiculo } from '../atendimento/entrada-pagina.tsx';
+import { PainelOperacao } from '../atendimento/painel-operacao.tsx';
 import { PaginaVagas } from '../atendimento/vagas-pagina.tsx';
 import type { ApiCliente } from '../api/cliente.ts';
 import type { Plano } from '../api/tipos.ts';
@@ -81,11 +82,13 @@ export function AreaCliente({
         ) : null}
         {pagamento ? (
           <section className="cartao cliente-cartao">
-            <p className="marca-redonda" aria-hidden="true">
-              AP
-            </p>
-            <h1>AutoPark</h1>
-            <p>Pague seu ticket pela aplicação</p>
+            <header className="cliente-cabecalho">
+              <p className="marca-redonda" aria-hidden="true">
+                AP
+              </p>
+              <h1>AutoPark</h1>
+              <p className="cliente-subtitulo">Pague seu ticket pela aplicação</p>
+            </header>
             <PaginaPagamento api={api} token={token} planoId={lerPlanoId(armazenamento, token)} />
             <PaginaMulta api={api} token={token} embutida />
           </section>
@@ -146,6 +149,12 @@ export function AreaAtendente({
   nome: string;
   aoSair: () => void;
 }) {
+  const [versaoPatio, setVersaoPatio] = useState(0);
+
+  function atualizarPatio() {
+    setVersaoPatio((atual) => atual + 1);
+  }
+
   return (
     <div className="aplicacao autopark">
       <a className="pular" href="#conteudo">
@@ -165,16 +174,15 @@ export function AreaAtendente({
         {destino === '/atendimento' ? (
           <div className="painel">
             <div className="painel-grade">
-              <PaginaVagas api={api} cartao />
-              <PaginaEntradaVeiculo api={api} cartao />
+              <PaginaVagas api={api} cartao versao={versaoPatio} />
+              <PainelOperacao api={api} aoSucesso={atualizarPatio} />
             </div>
-            <PaginaVeiculos api={api} cartao />
+            <PaginaVeiculos api={api} cartao versao={versaoPatio} />
           </div>
         ) : null}
-        {destino === '/atendimento/entrada' ? <PaginaEntradaVeiculo api={api} /> : null}
-        {destino === '/atendimento/veiculos' ? <PaginaVeiculos api={api} /> : null}
+        {destino === '/atendimento/entrada' ? <PaginaEntradaVeiculo api={api} aoSucesso={atualizarPatio} /> : null}
+        {destino === '/atendimento/veiculos' ? <PaginaVeiculos api={api} versao={versaoPatio} /> : null}
       </div>
     </div>
   );
 }
-

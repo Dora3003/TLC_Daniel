@@ -231,10 +231,17 @@
   border-color: transparent;
 }
 
+.painel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .painel-grade {
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
+  grid-template-columns: minmax(14rem, 0.9fr) minmax(18rem, 1.4fr);
   gap: 1rem;
+  align-items: stretch;
 }
 
 .painel-grade > *,
@@ -247,31 +254,191 @@
   background: var(--rosa-claro);
   border: 1px solid #f7c3da;
   border-radius: 16px;
-  padding: 1rem 1.1rem 1.2rem;
+  padding: 1.1rem 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  text-align: start;
+}
+
+.cartao-cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.5rem;
+}
+
+.abas-operacao {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.aplicacao .abas-operacao .aba {
+  width: 100%;
+  min-height: 2.75rem;
+  background: #fff;
+  color: var(--rosa);
+  border: 1px solid #f3b6d2;
+  font-weight: 700;
+}
+
+.aplicacao .abas-operacao .aba.ativa {
+  background: var(--rosa);
+  color: #fff;
+  border-color: var(--rosa);
+}
+
+.operacao-conteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
 }
 
 .cartao h2,
 .lista h2 {
-  text-align: center;
+  text-align: start;
   color: var(--rosa);
-  margin: 0 0 0.8rem;
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.35rem;
 }
 
-.cartao form {
+.cartao form,
+.formulario-cadastro {
   max-width: none;
+  width: 100%;
+}
+
+.formulario-cadastro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.formulario-cadastro label,
+.campo-busca {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--text-h);
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-align: start;
+}
+
+.formulario-cadastro input,
+.campo-busca input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #f3b6d2;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.campos-duplos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.formulario-cadastro button[type='submit'] {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.aplicacao .botao-secundario {
+  width: auto;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.85rem;
+  background: #fff;
+  color: var(--rosa);
+  border: 1px solid #f3b6d2;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.aplicacao .botao-largo {
+  width: 100%;
+  min-height: 2.75rem;
+}
+
+.cartao-feedback,
+.cartao-vazio {
+  margin: 0;
+}
+
+.cartao-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  align-items: flex-start;
+}
+
+.confirmacao-entrada {
+  background: #fff;
+  border: 1px solid #f3b6d2;
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.confirmacao-entrada h3 {
+  margin: 0 0 0.2rem;
+  color: var(--rosa);
+  font-size: 1.05rem;
+}
+
+.confirmacao-entrada p {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+  margin: 0;
+}
+
+.confirmacao-entrada span {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.confirmacao-entrada strong {
+  color: var(--text-h);
+  font-weight: 700;
+  text-align: end;
+}
+
+.vagas {
+  justify-content: flex-start;
 }
 
 .vagas .numeros {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  flex: 1;
+  align-content: center;
 }
 
 .vagas .numeros p {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   margin: 0;
+  min-height: 7rem;
+  background: #fff;
+  border: 1px solid #f3b6d2;
+  border-radius: 12px;
+  padding: 1rem 0.75rem;
+  text-align: center;
 }
 
 .vagas .numeros strong {
@@ -280,14 +447,61 @@
   line-height: 1;
 }
 
+.vagas .numeros span {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
 .lista {
-  margin-top: 1rem;
+  margin-top: 0;
+}
+
+.campo-busca {
+  width: min(100%, 22rem);
+}
+
+.lista caption {
+  caption-side: top;
+  text-align: start;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 0.55rem;
+  font-size: 0.95rem;
+}
+
+.lista table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: start;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid #f3b6d2;
+}
+
+.lista th,
+.lista td {
+  padding: 0.75rem 0.85rem;
+  text-align: start;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
 }
 
 .lista th {
   background: var(--rosa);
   color: #fff;
   border: 0;
+  font-weight: 700;
+}
+
+.lista td {
+  border-bottom: 1px solid #f7c3da;
+  color: var(--text-h);
+}
+
+.lista tr:last-child td {
+  border-bottom: 0;
 }
 
 .lista tr:nth-child(even) td {
@@ -367,16 +581,168 @@
 .cliente-cartao {
   width: 100%;
   max-width: none;
+  text-align: start;
+  gap: 1.1rem;
+}
+
+.cliente-cabecalho {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
+  gap: 0.35rem;
+}
+
+.cliente-cartao h1 {
+  color: var(--rosa);
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.cliente-subtitulo {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.95rem;
 }
 
 .cliente-cartao form,
 .cliente-cartao section {
   max-width: none;
+  width: 100%;
 }
 
 .cliente-cartao label {
   text-align: start;
+}
+
+.pagamento-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  text-align: start;
+}
+
+.pagamento-formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.pagamento-formulario label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--text-h);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.pagamento-formulario input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #f3b6d2;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text-h);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.pagamento-formulario > button {
+  width: 100%;
+}
+
+.pagamento-bloco .dica {
+  margin: 0;
+  text-align: start;
+  line-height: 1.4;
+}
+
+.dica-saida {
+  background: #fff;
+  border: 1px solid #f3b6d2;
+  border-radius: 10px;
+  padding: 0.75rem 0.85rem;
+}
+
+.comprovante {
+  background: #fff;
+  border: 1px solid #f3b6d2;
+  border-radius: 12px;
+  padding: 0.95rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: start;
+}
+
+.comprovante h2 {
+  margin: 0;
+  color: var(--rosa);
+  font-size: 1.2rem;
+  text-align: start;
+}
+
+.lista-dados {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.lista-dados > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.lista-dados dt {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.lista-dados dd {
+  margin: 0;
+  color: var(--text-h);
+  font-weight: 700;
+  text-align: end;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.6rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--rosa-claro);
+  color: var(--rosa);
+  font-size: 0.85rem;
+  text-transform: lowercase;
+}
+
+.comprovante-qr {
+  width: min(100%, 12rem);
+  margin: 0 auto;
+  display: block;
+}
+
+.comprovante-codigo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.comprovante-codigo p {
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .periodo {
@@ -441,6 +807,14 @@
 @media (max-width: 48rem) {
   .painel-grade {
     grid-template-columns: 1fr;
+  }
+
+  .campos-duplos {
+    grid-template-columns: 1fr;
+  }
+
+  .campo-busca {
+    width: 100%;
   }
 }
 

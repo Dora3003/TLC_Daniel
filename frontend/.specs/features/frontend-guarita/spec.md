@@ -4,15 +4,15 @@
 
 A plataforma AutoPark possui duas jornadas autenticadas e independentes, no visual rosa e creme descrito na seção 8:
 
-- **Cliente:** entra com o token do ticket, consulta a tabela de valores, paga a estadia e, se a API indicar, paga a cobrança adicional.
-- **Atendente:** entra com e-mail e senha, vê vagas ocupadas e disponíveis, cadastra um veículo e consulta os veículos alocados na mesma tela.
+- **Cliente:** entra com o token do ticket, consulta a **tabela de valores informativa** (tarifa AD-004), paga a estadia e, quando houver multa pendente no ticket, paga a cobrança adicional.
+- **Atendente:** entra com e-mail e senha, vê vagas ocupadas e disponíveis, **cadastra entrada ou registra saída por token**, e consulta veículos alocados (com busca local) na mesma tela.
 
 A interface não calcula valores, disponibilidade, vencimentos ou multas. A API é a fonte de verdade para essas informações.
 
 ## 2. Objetivos
 
-1. Permitir que o cliente escolha e pague um plano de estacionamento: **1 hora, 5 horas, diária ou mensal**.
-2. Exibir ao cliente apenas valores e regras retornados pelo backend antes da confirmação do pagamento.
+1. Permitir que o cliente consulte a tarifa (**R$ 5,00/h, mínimo 1 hora**) e pague a **estadia do ticket** (não há contratação de plano mensal/diária na API).
+2. Exibir ao cliente valores oficiais do ticket antes do pagamento; a tabela por hora é referência visual alinhada à AD-004.
 3. Permitir pagamento de uma cobrança adicional quando houver tempo excedente.
 4. Permitir que o atendente acompanhe vagas ocupadas/disponíveis, cadastre um veículo e consulte veículos alocados.
 5. Evitar duplicidade em registro de veículo e criação de pagamentos.
@@ -25,25 +25,27 @@ A interface não calcula valores, disponibilidade, vencimentos ou multas. A API 
 - Estorno, cancelamento, renovação automática de plano mensal e conciliação financeira.
 - Reserva de vaga específica.
 
-## 4. Premissas e decisões pendentes
+## 4. Premissas e decisões
 
-| ID | Decisão pendente | Impacto |
+| ID | Decisão | Status |
 |---|---|---|
-| DEC-01 | O cliente informa placa antes, durante ou depois de selecionar o plano? | vínculo plano–veículo |
-| DEC-02 | Quais meios/provedor de pagamento serão usados? | checkout e QR Code |
-| DEC-03 | Qual é a regra de início e término para 1h, 5h, diária e mensal? | validade e excedente |
-| DEC-04 | Como o backend identifica uma permanência excedida? | criação da cobrança adicional |
-| DEC-05 | A diária tem duração fixa ou encerra em horário definido? | copy e prazo |
-| DEC-06 | O atendente pode registrar saída ou só entrada? | escopo operacional |
-| DEC-07 | Quais papéis podem acessar o painel do atendente? | autorização |
+| DEC-01 | Placa vem do ticket; cliente não cadastra veículo. | Fechada |
+| DEC-02 | Pagamento simulado (AD-009); QR/código só se o backend devolver. | Fechada |
+| DEC-03 | Tarifa por hora (AD-004); sem planos contratáveis na API. Tabela informativa no front (FE-DEC-08). | Fechada |
+| DEC-04 | Multa após janela de saída (`POST /api/saida`). | Fechada |
+| DEC-05 | Diária/mensal fora do MVP da API. | N/A |
+| DEC-06 | Saída via `POST /api/saida`; painel atendente inclui aba de saída assistida (FE-DEC-12). | Fechada |
+| DEC-07 | Sem JWT no backend; separação cliente/atendente na experiência. | Fechada |
+| FE-DEC-09 | Capacidade do pátio = 20 no painel até a API informar lotação. | Ativa |
+| FE-DEC-11 | Identificador na lista = token de 7 caracteres. | Ativa |
 
-Os valores exibidos no protótipo (por exemplo, R$ 20,00) são apenas referência visual até confirmação da API.
+Detalhes e rastreio: `tasks.md` (registro 2026-10-02).
 
 ## 5. Requisitos funcionais
 
 ### Cliente — planos e pagamento
 
-- **PARK-01** — O sistema deve apresentar os planos ativos retornados pela API: 1h, 5h, diária e mensal, quando disponíveis.
+- **PARK-01** — O sistema deve apresentar a tabela de valores (períodos por hora com preço de referência AD-004) e o valor atual da estadia do ticket.
 - **PARK-02** — Cada plano deve exibir nome, duração/regra de validade, preço em BRL e condições fornecidas pela API.
 - **PARK-03** — O cliente deve conseguir selecionar um único plano disponível e avançar para a revisão.
 - **PARK-04** — A revisão deve apresentar placa (quando aplicável), plano, preço, validade e regras antes de iniciar o pagamento.
@@ -64,11 +66,11 @@ Os valores exibidos no protótipo (por exemplo, R$ 20,00) são apenas referênci
 
 ### Atendente — operação de vagas e veículos
 
-- **PARK-16** — Usuários com perfil de atendente devem visualizar a quantidade de vagas ocupadas, disponíveis e a capacidade total retornadas pela API.
+- **PARK-16** — O atendente deve visualizar vagas ocupadas (contagem oficial do pátio), disponíveis e capacidade total (ocupadas oficiais; capacidade/disponíveis conforme FE-DEC-09 até contrato de lotação).
 - **PARK-17** — O painel do atendente deve atualizar os indicadores a partir da fonte oficial; a estratégia de atualização (manual, polling ou tempo real) deve ser definida em DEC-06/contrato técnico.
 - **PARK-18** — O atendente deve poder cadastrar a entrada de um veículo informando placa válida e os dados obrigatórios definidos pela API.
 - **PARK-19** — Após registrar a entrada, o sistema deve apresentar confirmação com placa, identificador da alocação e data/hora retornados pela API.
-- **PARK-20** — O painel deve listar veículos atualmente alocados com identificador, placa e data/hora de alocação.
+- **PARK-20** — O painel deve listar veículos alocados com identificador (token), placa, motorista e data/hora; permitir busca local por nome, token ou placa.
 - **PARK-21** — O sistema deve impedir registro duplicado de placa já alocada e apresentar uma mensagem compreensível quando a API recusar a operação.
 - **PARK-22** — Se não houver vagas disponíveis, o cadastro de entrada deve ficar indisponível e informar o motivo.
 
@@ -124,7 +126,7 @@ Tema claro, sem modo escuro. Página creme, faixa superior rosa com a marca **Au
 Coluna estreita, no máximo cerca de 24rem, centralizada.
 
 1. **`/` — Login.** Cartão com a marca circular, título AutoPark, texto “Acesse sua conta”, campo **Token**, botão **Entrar** e a dica “Use o token enviado para acessar o painel.” O token tem 7 letras ou números. Um link discreto leva ao acesso do atendente.
-2. **`/cliente/planos` — Tabela de valores.** Duas abas em pílula: **Tabela de valores** e **Pagamento**. No cartão: marca, AutoPark, “Pague seu ticket pela aplicação” e “Escolha o período de estacionamento”. Cada plano é uma linha arredondada com nome, validade e preço retornados pela API.
+2. **`/cliente/planos` — Tabela de valores.** Abas **Tabela de valores** e **Pagamento**. Cartão com marca, subtítulo, regra “R$ 5,00 por hora. Mínimo de 1 hora.”, bloco **Sua estadia** (placa, tempo, valor, status do ticket) e linhas de referência 1h–5h.
 3. **`/cliente/pagamento` — Pagamento.** As mesmas abas e o mesmo cabeçalho do cartão. Campo **Token** somente leitura, botão **Gerar QR Code** e a orientação de uso do token. QR e **Copiar código** aparecem só quando a API devolve esses dados. **Gerar QR Code Multa** aparece só quando a API indica cobrança adicional.
 
 A revisão do plano, quando existir, permanece dentro dessa coluna, sem uma terceira aba.
@@ -134,6 +136,6 @@ A revisão do plano, quando existir, permanece dentro dessa coluna, sem uma terc
 Conteúdo mais largo, até cerca de 1120px.
 
 1. **`/atendimento` sem sessão — Login.** O mesmo cartão rosa, com **E-mail**, **Senha** e **Entrar**.
-2. **`/atendimento` com sessão — Painel.** Faixa AutoPark, saudação “Olá, {nome}!” e **Sair**. Abaixo, dois cartões lado a lado: **Vagas** (números grandes de ocupadas e disponíveis) e **Cadastrar Veículo**. Embaixo, o cartão **Veículos Alocados**, com tabela de ID, Placa e Data de Alocação. O cabeçalho da tabela é rosa e as linhas alternam branco e rosa bem claro.
+2. **`/atendimento` com sessão — Painel.** Faixa AutoPark, saudação e **Sair**. Grade: **Vagas** | cartão **Operação** com abas **Cadastrar Veículo** e **Saída de Veículo**. Abaixo, **Veículos Alocados** com campo de busca e colunas Identificador (token), Placa, Motorista, Data.
 
 Em tela estreita, os dois cartões do painel ficam um abaixo do outro.

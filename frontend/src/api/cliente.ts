@@ -3,6 +3,7 @@ import type { Http } from './http.ts';
 import type { MultaPaga, Pagamento, Plano, Ticket } from './tipos.ts';
 import type { Sessao } from '../auth/sessao.ts';
 import { normalizarToken, tokenValido } from '../auth/token.ts';
+import { catalogoTarifaOficial, planoPorId } from '../planos/tabela-valores.ts';
 
 export interface ApiCliente {
   obterTicket(): Promise<Ticket>;
@@ -21,8 +22,15 @@ export function criarApiCliente(http: Http, sessao: Extract<Sessao, { papel: 'cl
 
   return {
     obterTicket: () => http.get<Ticket>(caminho),
-    listarPlanos: () => http.get<Plano[]>('/api/planos'),
-    obterPlano: (id) => http.get<Plano>(`/api/planos/${encodeURIComponent(id)}`),
+    // A API real não expõe /api/planos (DEC-03). A tabela usa a tarifa oficial AD-004.
+    listarPlanos: async () => catalogoTarifaOficial(),
+    obterPlano: async (id) => {
+      const plano = planoPorId(id);
+      if (!plano) {
+        throw new ErroApi(404, 'PLANO_NAO_ENCONTRADO', 'Plano não encontrado.');
+      }
+      return plano;
+    },
     pagarEstadia: () => http.post<Pagamento>(`${caminho}/pagamentos`),
     pagarMulta: () => http.post<MultaPaga>(`${caminho}/multas`),
   };

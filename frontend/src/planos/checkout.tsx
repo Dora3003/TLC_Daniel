@@ -51,26 +51,29 @@ export function PaginaPagamento({
     ticket.estado.tipo === 'ready' && podeIniciarPagamento(ticket.estado.dados.status) && oficial === null;
 
   return (
-    <section>
-      <label>
-        Token
-        <input value={token} readOnly />
-      </label>
-      {ticket.estado.tipo === 'loading' ? <p role="status">Consultando o status do pagamento…</p> : null}
-      {ticket.estado.tipo === 'error' ? (
-        <>
-          <p role="alert">{ticket.estado.mensagem}</p>
-          <button type="button" onClick={ticket.recarregar}>
-            Tentar novamente
-          </button>
-        </>
-      ) : null}
-      {ocupado ? <p role="status">Processando pagamento…</p> : null}
-      <button type="button" onClick={() => void pagamento.enviar()} disabled={!podePagar || ocupado}>
-        Gerar QR Code
-      </button>
-      <p className="dica">Utilize o token do seu ticket para pagar a estadia.</p>
-      {pagamento.estado.tipo === 'error' ? <p role="alert">{pagamento.estado.mensagem}</p> : null}
+    <section className="pagamento-bloco">
+      <div className="pagamento-formulario">
+        <label>
+          Token
+          <input value={token} readOnly />
+        </label>
+        {ticket.estado.tipo === 'loading' ? <p role="status">Consultando o status do pagamento…</p> : null}
+        {ticket.estado.tipo === 'error' ? (
+          <div className="cartao-feedback">
+            <p role="alert">{ticket.estado.mensagem}</p>
+            <button type="button" onClick={ticket.recarregar}>
+              Tentar novamente
+            </button>
+          </div>
+        ) : null}
+        {ocupado ? <p role="status">Processando pagamento…</p> : null}
+        <button type="button" onClick={() => void pagamento.enviar()} disabled={!podePagar || ocupado}>
+          Gerar QR Code
+        </button>
+        <p className="dica">Utilize o token do seu ticket para pagar a estadia.</p>
+        {pagamento.estado.tipo === 'error' ? <p role="alert">{pagamento.estado.mensagem}</p> : null}
+      </div>
+
       {oficial ? (
         <Comprovante
           identificador={token}
@@ -79,9 +82,9 @@ export function PaginaPagamento({
           plano={plano.estado.tipo === 'ready' ? plano.estado.dados : null}
         />
       ) : null}
-      <p className="dica">
-        Você tem até 10 minutos para realizar a saída. Depois desse prazo, a cobrança adicional só aparece se a API
-        indicar a multa.
+
+      <p className="dica dica-saida">
+        Você tem até 10 minutos para realizar a saída. Depois desse prazo, pode haver cobrança adicional.
       </p>
     </section>
   );
@@ -123,29 +126,45 @@ export function Comprovante({
   }
 
   return (
-    <section aria-labelledby="titulo-comprovante">
+    <section className="comprovante" aria-labelledby="titulo-comprovante">
       <h2 id="titulo-comprovante">Comprovante</h2>
-      <dl>
-        <dt>Identificador</dt>
-        <dd>{identificador}</dd>
-        <dt>Placa</dt>
-        <dd>{ticket.placa}</dd>
-        <dt>Plano</dt>
-        <dd>{plano?.nome ?? '—'}</dd>
-        <dt>Status</dt>
-        <dd>{status}</dd>
-        <dt>Valor</dt>
-        <dd>{formatarMoeda(valor)}</dd>
-        <dt>Validade</dt>
-        <dd>{plano?.validade ?? '—'}</dd>
-        <dt>Janela de saída</dt>
-        <dd>{formatarData(validade)}</dd>
+      <dl className="lista-dados">
+        <div>
+          <dt>Identificador</dt>
+          <dd>{identificador}</dd>
+        </div>
+        <div>
+          <dt>Placa</dt>
+          <dd>{ticket.placa}</dd>
+        </div>
+        <div>
+          <dt>Plano</dt>
+          <dd>{plano?.nome ?? '—'}</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>
+            <span className="status-pill">{status}</span>
+          </dd>
+        </div>
+        <div>
+          <dt>Valor</dt>
+          <dd>{formatarMoeda(valor)}</dd>
+        </div>
+        <div>
+          <dt>Validade</dt>
+          <dd>{plano?.validade ?? '—'}</dd>
+        </div>
+        <div>
+          <dt>Janela de saída</dt>
+          <dd>{formatarData(validade)}</dd>
+        </div>
       </dl>
       {codigos.qrCode && qrEhImagem(codigos.qrCode) ? (
-        <img src={codigos.qrCode} alt="QR Code do pagamento" />
+        <img className="comprovante-qr" src={codigos.qrCode} alt="QR Code do pagamento" />
       ) : null}
       {copiavel ? (
-        <>
+        <div className="comprovante-codigo">
           <p>
             Código: <span>{copiavel}</span>
           </p>
@@ -153,7 +172,7 @@ export function Comprovante({
             Copiar código
           </button>
           {copiado ? <p role="status">Código copiado.</p> : null}
-        </>
+        </div>
       ) : null}
     </section>
   );

@@ -15,8 +15,8 @@ Cliente (coluna estreita)
 Atendente (painel largo)
   /atendimento          Login por e-mail e senha, se não houver sessão
   /atendimento          Olá + Sair
-                          Vagas | Cadastrar Veículo
-                          Veículos Alocados
+                          Vagas | Operação (Cadastrar | Saída por token)
+                          Veículos Alocados (+ busca local)
 ```
 
 A separação evita que uma tela do cliente exponha dados operacionais e que o atendente possa operar pagamentos de terceiros sem requisito explícito.
@@ -25,11 +25,11 @@ A separação evita que uma tela do cliente exponha dados operacionais e que o a
 
 | Módulo | Responsabilidade | Não faz |
 |---|---|---|
-| Catálogo de planos | Carrega e exibe planos ativos | calcula preço ou validade |
+| Tabela de valores | Exibe tarifa AD-004 e ticket atual | substitui valor cobrado no pagamento |
 | Revisão | Mostra dados atuais antes de pagar | confirma pagamento localmente |
 | Pagamento | Inicia tentativa e acompanha status | processa dinheiro/gera QR inventado |
 | Cobrança adicional | Exibe e quita excedente retornado | calcula excedente ou multa |
-| Dashboard operacional | Mostra ocupação oficial | estima vagas por lista local |
+| Dashboard operacional | Ocupadas via `/api/ativos`; capacidade parâmetro UI | inventa lotação no backend |
 | Entrada de veículo | Envia placa e dados exigidos | aprova entrada se API recusar |
 | Veículos alocados | Lista alocações ativas | substitui backoffice/histórico completo |
 
@@ -103,7 +103,7 @@ Estados canônicos conceituais: `PENDING`, `PAID/CONFIRMED`, `FAILED`, `EXPIRED`
 
 ### Ocupação
 
-A UI deve apresentar `occupied`, `available`, `capacity` e `updatedAt` quando fornecidos. A consistência vem da API; uma lista carregada localmente não deve ser usada para deduzir vagas.
+Ocupadas vêm da contagem de `GET /api/ativos`. Capacidade e disponíveis: parâmetro `CAPACIDADE_PATIO` (20) até o backend expor lotação (FE-DEC-09). Sem `updatedAt`; refresh manual e após mutações de entrada/saída.
 
 ## 6. Rotas conceituais
 
@@ -174,4 +174,4 @@ A faixa (`.barra`) ocupa a largura, com “AutoPark” em branco. O cartão (`.c
 
 Cliente: miolo centralizado, largura máxima de 24rem. Abas em pílula; a aba atual fica rosa com texto branco, a outra fica branca com texto rosa. Linha de plano: pílula branca, texto rosa, nome e validade à esquerda, preço à direita.
 
-Atendente: miolo até 1120px. No painel, a grade é `Vagas` e `Cadastrar Veículo` lado a lado; abaixo de 40rem, uma coluna. Os números de ocupadas e disponíveis são grandes e rosa. A tabela de alocados tem cabeçalho rosa com texto branco e linhas alternadas `#ffffff` e `#fff0f6`. As colunas visíveis são ID, Placa e Data de Alocação.
+Atendente: miolo até 1120px. Grade `Vagas` + cartão `Operação` (abas Cadastrar/Saída). Comprovantes e formulários alinhados à esquerda; cabeçalhos de cartão com botão secundário **Atualizar** quando aplicável. Tabela: Identificador (token), Placa, Motorista, Data; busca acima da tabela. Cliente: comprovante em lista rótulo/valor (`lista-dados`), sem jargão técnico na copy.
