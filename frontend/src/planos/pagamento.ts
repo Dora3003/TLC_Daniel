@@ -36,6 +36,22 @@ export function qrEhImagem(qrCode: string): boolean {
   return qrCode.startsWith('data:image/') || qrCode.startsWith('https://') || qrCode.startsWith('http://');
 }
 
+/** URL aberta pelo QR: ao carregar, a página dispara o pagamento do ticket. */
+export function urlConfirmacaoPagamento(origem: string, token: string): string {
+  const base = origem.replace(/\/$/, '');
+  return `${base}/pagar?token=${encodeURIComponent(token.trim().toUpperCase())}`;
+}
+
+export function urlConfirmacaoMulta(origem: string, token: string): string {
+  const base = origem.replace(/\/$/, '');
+  return `${base}/pagar-multa?token=${encodeURIComponent(token.trim().toUpperCase())}`;
+}
+
+/** Imagem de QR apontando para a URL de confirmação (serviço público de geração). */
+export function imagemQrDaUrl(url: string, tamanho = 220): string {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${tamanho}x${tamanho}&data=${encodeURIComponent(url)}`;
+}
+
 export async function pagarUmaVez(api: Pick<ApiCliente, 'obterTicket' | 'pagarEstadia'>): Promise<{
   ticket: Ticket;
   pagamento: Pagamento | null;

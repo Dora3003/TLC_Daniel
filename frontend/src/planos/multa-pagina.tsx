@@ -1,8 +1,9 @@
+import { useMemo, useState } from 'react';
 import type { ApiCliente } from '../api/cliente.ts';
 import { useConsulta } from '../hooks/useConsulta.ts';
-import { useMutacao } from '../hooks/useMutacao.ts';
 import type { ComprovanteMultaDados } from './multa.ts';
-import { cobrancaIndicada, comprovanteDaConsulta, comprovanteDaResposta, pagarMultaUmaVez } from './multa.ts';
+import { cobrancaIndicada, comprovanteDaConsulta } from './multa.ts';
+import { imagemQrDaUrl, urlConfirmacaoMulta } from './pagamento.ts';
 
 function formatarMoeda(valor: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
@@ -25,21 +26,16 @@ export function PaginaMulta({
   embutida?: boolean;
 }) {
   const ticket = useConsulta('multa', () => api.obterTicket());
-  const pagamento = useMutacao(() => pagarMultaUmaVez(api));
-  const confirmada =
-    pagamento.estado.tipo === 'ready' && pagamento.estado.dados.tipo === 'confirmada'
-      ? comprovanteDaResposta(pagamento.estado.dados.ticket, pagamento.estado.dados.multa, token)
-      : null;
-  const ticketExibido =
-    pagamento.estado.tipo === 'ready' && pagamento.estado.dados.tipo === 'ausente'
-      ? pagamento.estado.dados.ticket
-      : ticket.estado.tipo === 'ready'
-        ? ticket.estado.dados
-        : null;
-  const daConsulta = confirmada || !ticketExibido ? null : comprovanteDaConsulta(ticketExibido, token);
-  const comprovante = confirmada ?? daConsulta;
+  const [qrVisivel, setQrVisivel] = useState(false);
+  const ticketExibido = ticket.estado.tipo === 'ready' ? ticket.estado.dados : null;
+  const comprovante = ticketExibido ? comprovanteDaConsulta(ticketExibido, token) : null;
   const pendente = ticketExibido !== null && cobrancaIndicada(ticketExibido) && comprovante === null;
-  const ocupado = pagamento.estado.tipo === 'submitting';
+
+  const linkMulta = useMemo(
+    () => urlConfirmacaoMulta(typeof window !== 'undefined' ? window.location.origin : '', token),
+    [token],
+  );
+  const imagemQr = useMemo(() => imagemQrDaUrl(linkMulta), [linkMulta]);
 
   return (
     <section className={embutida ? undefined : 'pagina'}>
@@ -53,7 +49,6 @@ export function PaginaMulta({
           </button>
         </>
       ) : null}
-      {ocupado ? <p role="status">Processando pagamento…</p> : null}
       {ticketExibido && !pendente && comprovante === null && !embutida ? (
         <p>Não há cobrança adicional para este ticket.</p>
       ) : null}
@@ -76,12 +71,25 @@ export function PaginaMulta({
               <dd>{formatarMoeda(ticketExibido.valorMulta)}</dd>
             </div>
           </dl>
-          <button type="button" onClick={() => void pagamento.enviar()} disabled={ocupado}>
+          <button type="button" onClick={() => setQrVisivel(true)}>
             Gerar QR Code Multa
           </button>
+          {qrVisivel ? (
+            <div className="qr-painel">
+              <img className="comprovante-qr" src={imagemQr} alt="QR Code para confirmar a cobrança adicional" />
+              <p className="dica">Escaneie para abrir a página que confirma o pagamento da multa.</p>
+              <p className="link-pagamento">
+                <a href={linkMulta} target="_blank" rel="noreferrer">
+                  Abrir link de confirmação
+                </a>
+              </p>
+              <button type="button" className="botao-secundario botao-largo" onClick={ticket.recarregar}>
+                Já paguei — atualizar status
+              </button>
+            </div>
+          ) : null}
         </section>
       ) : null}
-      {pagamento.estado.tipo === 'error' ? <p role="alert">{pagamento.estado.mensagem}</p> : null}
       {comprovante ? <ReciboMulta dados={comprovante} /> : null}
     </section>
   );

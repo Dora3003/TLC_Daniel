@@ -3,9 +3,12 @@ import assert from 'node:assert/strict';
 import {
   codigoCopiavel,
   codigosDoPagamento,
+  imagemQrDaUrl,
   pagamentoConfirmado,
   podeIniciarPagamento,
   qrEhImagem,
+  urlConfirmacaoMulta,
+  urlConfirmacaoPagamento,
 } from './pagamento.ts';
 
 describe('pagamento', () => {
@@ -33,5 +36,19 @@ describe('pagamento', () => {
     assert.equal(codigoCopiavel(codigos), 'ABC123');
     assert.equal(qrEhImagem('payload'), false);
     assert.equal(qrEhImagem('data:image/png;base64,aaa'), true);
+  });
+
+  it('deve montar URL e imagem de QR para confirmar o pagamento', () => {
+    assert.equal(
+      urlConfirmacaoPagamento('https://tlc-daniel.onrender.com', 'u3t98lx'),
+      'https://tlc-daniel.onrender.com/pagar?token=U3T98LX',
+    );
+    assert.equal(
+      urlConfirmacaoMulta('https://tlc-daniel.onrender.com/', 'U3T98LX'),
+      'https://tlc-daniel.onrender.com/pagar-multa?token=U3T98LX',
+    );
+    const imagem = imagemQrDaUrl('https://tlc-daniel.onrender.com/pagar?token=U3T98LX');
+    assert.match(imagem, /^https:\/\/api\.qrserver\.com\//);
+    assert.equal(qrEhImagem(imagem), true);
   });
 });

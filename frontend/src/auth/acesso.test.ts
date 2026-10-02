@@ -111,6 +111,16 @@ describe('decidirAcesso', () => {
     });
   });
 
+  it('deve abrir a página de confirmação do QR com o token', () => {
+    assert.deepEqual(decidirAcesso('/pagar', '?token=U3T98LX', null), {
+      permitido: true,
+      destino: '/pagar',
+      sessao: cliente,
+    });
+    assert.equal(decidirAcesso('/pagar-multa', '?token=U3T98LX', null).destino, '/pagar-multa');
+    assert.equal(decidirAcesso('/pagar', '', null).motivo, 'token_ausente');
+  });
+
   it('deve ignorar barra final na rota do cliente', () => {
     assert.equal(decidirAcesso('/cliente/', '', cliente).destino, '/cliente');
   });

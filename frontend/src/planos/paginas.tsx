@@ -1,6 +1,7 @@
 import type { ApiCliente } from '../api/cliente.ts';
 import { ErroApi } from '../api/erro-api.ts';
 import type { Plano } from '../api/tipos.ts';
+import { MarcaAutoPark } from '../app/marca.tsx';
 import { useConsulta } from '../hooks/useConsulta.ts';
 import { useMutacao } from '../hooks/useMutacao.ts';
 import { BotaoPagamento } from './checkout.tsx';
@@ -36,9 +37,7 @@ export function PaginaPlanos({
   return (
     <section className="cartao cliente-cartao">
       <header className="cliente-cabecalho">
-        <p className="marca-redonda" aria-hidden="true">
-          AP
-        </p>
+        <MarcaAutoPark />
         <h1>AutoPark</h1>
         <p className="cliente-subtitulo">Pague seu ticket pela aplicação</p>
       </header>
@@ -186,9 +185,7 @@ export function PaginaRevisao({
   return (
     <section className="cartao cliente-cartao">
       <header className="cliente-cabecalho">
-        <p className="marca-redonda" aria-hidden="true">
-          AP
-        </p>
+        <MarcaAutoPark />
         <h1>Revisão</h1>
         <p className="cliente-subtitulo">Confira os dados antes do pagamento</p>
       </header>

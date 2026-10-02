@@ -7,6 +7,7 @@ import { PaginaVagas } from '../atendimento/vagas-pagina.tsx';
 import type { ApiCliente } from '../api/cliente.ts';
 import type { Plano } from '../api/tipos.ts';
 import { armazenamentoDaSessao } from '../auth/sessao.ts';
+import { MarcaAutoPark } from '../app/marca.tsx';
 import { useConsulta } from '../hooks/useConsulta.ts';
 import { PaginaPagamento } from '../planos/checkout.tsx';
 import { PaginaComprovante, PaginaContratacoes } from '../planos/contratacoes-pagina.tsx';
@@ -83,9 +84,7 @@ export function AreaCliente({
         {pagamento ? (
           <section className="cartao cliente-cartao">
             <header className="cliente-cabecalho">
-              <p className="marca-redonda" aria-hidden="true">
-                AP
-              </p>
+              <MarcaAutoPark />
               <h1>AutoPark</h1>
               <p className="cliente-subtitulo">Pague seu ticket pela aplicação</p>
             </header>

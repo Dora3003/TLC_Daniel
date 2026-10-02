@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react';
 import { useState } from 'react';
+import { MarcaAutoPark } from '../app/marca.tsx';
 import { normalizarToken, tokenValido } from '../auth/token.ts';
 import { LinkInterno } from '../rotas/navegacao.tsx';
 import { useNavegacao } from '../rotas/contexto-navegacao.ts';
@@ -29,9 +30,7 @@ export function PaginaLoginCliente({ mensagem }: { mensagem: string | null }) {
       </header>
       <div id="conteudo" className="login-miolo" tabIndex={-1}>
         <form className="cartao login-cartao" onSubmit={aoEnviar}>
-          <p className="marca-redonda" aria-hidden="true">
-            AP
-          </p>
+          <MarcaAutoPark />
           <h1>AutoPark</h1>
           <p>Acesse sua conta</p>
           {mensagem ? <p role="alert">{mensagem}</p> : null}
