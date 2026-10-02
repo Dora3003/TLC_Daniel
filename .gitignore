@@ -3,6 +3,5 @@ dist/
 .env
 *.log
 .DS_Store
-.specs/_tlc/
 TCL_Daniel-feat-backend-api.patch
 TCL_Daniel-feat-backend-api.bundle
