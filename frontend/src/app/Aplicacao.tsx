@@ -14,6 +14,7 @@ import { urlDaApi } from '../api/url.ts';
 import { AreaAtendente, AreaCliente } from '../paginas/areas.tsx';
 import { PaginaLogin } from '../atendimento/login-pagina.tsx';
 import { PaginaLoginCliente } from '../planos/login-cliente.tsx';
+import { PaginaConfirmarPagamento } from '../planos/confirmar-pagamento.tsx';
 import { useNavegacao } from '../rotas/contexto-navegacao.ts';
 import { ProvedorNavegacao } from '../rotas/navegacao.tsx';
 
@@ -37,6 +38,12 @@ function Conteudo() {
   const [sessao, setSessao] = useState<Sessao>(() => lerSessao(armazenamento));
   const http = useMemo(() => criarHttp(globalThis.fetch.bind(globalThis), urlDaApi()), []);
   const decisao = decidirAcesso(pathname, search, sessao);
+  const tokenCliente = decisao.sessao?.papel === 'cliente' ? decisao.sessao.token : null;
+  const apiCliente = useMemo(
+    () => (tokenCliente ? criarApiCliente(http, { papel: 'cliente', token: tokenCliente }) : null),
+    [http, tokenCliente],
+  );
+  const apiAtendente = useMemo(() => criarApiAtendente(http), [http]);
 
   if (!mesmaSessao(sessao, decisao.sessao)) {
     gravarSessao(armazenamento, decisao.sessao);
@@ -44,18 +51,15 @@ function Conteudo() {
   }
 
   useEffect(() => {
-    const temToken = new URLSearchParams(search).has('token');
-    if (pathname === decisao.destino && !temToken) return;
+    const confirmaPagamento = pathname === '/pagar' || pathname === '/pagar-multa';
+    if (pathname === decisao.destino) return;
+    if (confirmaPagamento) return;
     const destino = decisao.motivo ? `${decisao.destino}?aviso=${decisao.motivo}` : decisao.destino;
     substituir(destino);
-  }, [decisao.destino, decisao.motivo, pathname, search, substituir]);
+  }, [decisao.destino, decisao.motivo, pathname, substituir]);
 
-  const tokenCliente = decisao.sessao?.papel === 'cliente' ? decisao.sessao.token : null;
-  const apiCliente = useMemo(
-    () => (tokenCliente ? criarApiCliente(http, { papel: 'cliente', token: tokenCliente }) : null),
-    [http, tokenCliente],
-  );
-  const apiAtendente = useMemo(() => criarApiAtendente(http), [http]);
+  const aviso = lerAviso(search);
+  const mensagem = aviso ? MENSAGENS_ACESSO[aviso] : null;
 
   function entrar(conta: { nome: string; email: string }) {
     const proxima: Sessao = { papel: 'atendente', nome: conta.nome, email: conta.email };
@@ -70,8 +74,9 @@ function Conteudo() {
     navegar('/');
   }
 
-  const aviso = lerAviso(search);
-  const mensagem = aviso ? MENSAGENS_ACESSO[aviso] : null;
+  if (decisao.destino === '/pagar' || decisao.destino === '/pagar-multa') {
+    return <PaginaConfirmarPagamento tipo={decisao.destino === '/pagar' ? 'estadia' : 'multa'} />;
+  }
 
   if (decisao.destino.startsWith('/cliente') && apiCliente && decisao.sessao?.papel === 'cliente') {
     return (

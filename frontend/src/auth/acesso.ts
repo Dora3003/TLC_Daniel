@@ -35,7 +35,7 @@ function normalizarCaminho(pathname: string): string {
 }
 
 function areaDoCaminho(caminho: string): Area {
-  if (caminho === '/') return 'publica';
+  if (caminho === '/' || caminho === '/pagar' || caminho === '/pagar-multa') return 'publica';
   if (caminho === '/cliente' || caminho === '/cliente/planos' || caminho === '/cliente/revisao' || caminho === '/cliente/pagamento' || caminho === '/cliente/comprovante' || caminho === '/cliente/contratacoes' || caminho === '/cliente/multa') {
     return 'cliente';
   }
@@ -67,10 +67,15 @@ export function decidirAcesso(pathname: string, search: string, sessao: Sessao):
     const token = normalizarToken(tokenBruto);
     if (!tokenValido(token)) return negar('/', null, 'token_invalido');
     const sessaoCliente: Sessao = { papel: 'cliente', token };
+    if (caminho === '/pagar' || caminho === '/pagar-multa') return permitir(caminho, sessaoCliente);
     if (area === 'atendente') return negar(INICIO_CLIENTE, sessaoCliente, 'cliente_sem_acesso_operacional');
     if (area === 'cliente') return permitir(caminho, sessaoCliente);
     if (area === 'desconhecida') return negar(INICIO_CLIENTE, sessaoCliente, 'rota_inexistente');
     return permitir(INICIO_CLIENTE, sessaoCliente);
+  }
+
+  if (caminho === '/pagar' || caminho === '/pagar-multa') {
+    return negar('/', null, 'token_ausente');
   }
 
   if (sessao?.papel === 'cliente') {

@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ApiCliente } from '../api/cliente.ts';
 import type { Pagamento, Plano, Ticket } from '../api/tipos.ts';
 import { useConsulta } from '../hooks/useConsulta.ts';
-import { useMutacao } from '../hooks/useMutacao.ts';
 import { useNavegacao } from '../rotas/contexto-navegacao.ts';
 import {
   codigoCopiavel,
   codigosDoPagamento,
+  imagemQrDaUrl,
   pagamentoConfirmado,
-  pagarUmaVez,
   podeIniciarPagamento,
   qrEhImagem,
+  urlConfirmacaoPagamento,
 } from './pagamento.ts';
 
 function formatarMoeda(valor: number): string {
@@ -35,20 +35,17 @@ export function PaginaPagamento({
 }) {
   const ticket = useConsulta('pagamento-ticket', () => api.obterTicket());
   const plano = useConsulta(planoId ? `pagamento-plano-${planoId}` : null, () => api.obterPlano(planoId!));
-  const pagamento = useMutacao(() => pagarUmaVez(api));
-  const daMutacao =
-    pagamento.estado.tipo === 'ready' && resultadoConfirmado(pagamento.estado.dados)
-      ? pagamento.estado.dados
-      : null;
-  const daConsulta =
-    ticket.estado.tipo === 'ready' && pagamentoConfirmado(ticket.estado.dados.status)
-      ? { ticket: ticket.estado.dados, pagamento: null }
-      : null;
-  const oficial = daMutacao ?? daConsulta;
+  const [qrVisivel, setQrVisivel] = useState(false);
 
-  const ocupado = pagamento.estado.tipo === 'submitting';
-  const podePagar =
-    ticket.estado.tipo === 'ready' && podeIniciarPagamento(ticket.estado.dados.status) && oficial === null;
+  const jaPago = ticket.estado.tipo === 'ready' && pagamentoConfirmado(ticket.estado.dados.status);
+  const podeGerar =
+    ticket.estado.tipo === 'ready' && podeIniciarPagamento(ticket.estado.dados.status) && !jaPago;
+
+  const linkPagamento = useMemo(
+    () => urlConfirmacaoPagamento(typeof window !== 'undefined' ? window.location.origin : '', token),
+    [token],
+  );
+  const imagemQr = useMemo(() => imagemQrDaUrl(linkPagamento), [linkPagamento]);
 
   return (
     <section className="pagamento-bloco">
@@ -66,19 +63,38 @@ export function PaginaPagamento({
             </button>
           </div>
         ) : null}
-        {ocupado ? <p role="status">Processando pagamento…</p> : null}
-        <button type="button" onClick={() => void pagamento.enviar()} disabled={!podePagar || ocupado}>
-          Gerar QR Code
-        </button>
-        <p className="dica">Utilize o token do seu ticket para pagar a estadia.</p>
-        {pagamento.estado.tipo === 'error' ? <p role="alert">{pagamento.estado.mensagem}</p> : null}
+
+        {podeGerar ? (
+          <>
+            <button type="button" onClick={() => setQrVisivel(true)}>
+              Gerar QR Code
+            </button>
+            <p className="dica">Escaneie o QR para abrir a página que confirma o pagamento do ticket.</p>
+          </>
+        ) : null}
+
+        {qrVisivel && podeGerar ? (
+          <section className="comprovante qr-painel" aria-labelledby="titulo-qr">
+            <h2 id="titulo-qr">QR Code de pagamento</h2>
+            <img className="comprovante-qr" src={imagemQr} alt="QR Code para confirmar o pagamento" />
+            <p className="dica">Ao escanear, o site registra o pagamento deste ticket.</p>
+            <p className="link-pagamento">
+              <a href={linkPagamento} target="_blank" rel="noreferrer">
+                Abrir link de confirmação
+              </a>
+            </p>
+            <button type="button" className="botao-secundario botao-largo" onClick={ticket.recarregar}>
+              Já paguei — atualizar status
+            </button>
+          </section>
+        ) : null}
       </div>
 
-      {oficial ? (
+      {jaPago && ticket.estado.tipo === 'ready' ? (
         <Comprovante
           identificador={token}
-          ticket={oficial.ticket}
-          pagamento={oficial.pagamento}
+          ticket={ticket.estado.dados}
+          pagamento={null}
           plano={plano.estado.tipo === 'ready' ? plano.estado.dados : null}
         />
       ) : null}
@@ -88,11 +104,6 @@ export function PaginaPagamento({
       </p>
     </section>
   );
-}
-
-function resultadoConfirmado(resultado: { ticket: Ticket; pagamento: Pagamento | null }): boolean {
-  if (resultado.pagamento) return pagamentoConfirmado(resultado.pagamento.status);
-  return pagamentoConfirmado(resultado.ticket.status);
 }
 
 export function Comprovante({
