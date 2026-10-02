@@ -1,141 +1,293 @@
-# Spec — Plataforma de Estacionamento
+# Frontend Guarita — Specification
 
-## 1. Visão do produto
+> **Revisão de 02/10/2026.** Spec alinhada ao contrato real da API, conforme a descoberta
+> registrada em `tasks.md` (T-001). A versão anterior derivava do protótipo visual "AutoPark" e
+> descrevia planos por período, checkout Pix e capacidade de vagas — nada disso existe no backend.
+> As decisões `DEC-01` a `DEC-07` ficam resolvidas aqui, e os pontos em que a tela usa dado local
+> estão declarados como dívida (AD-014, AD-015) em vez de requisito cumprido.
 
-A plataforma AutoPark possui duas jornadas autenticadas e independentes, no visual rosa e creme descrito na seção 8:
+## Problem Statement
 
-- **Cliente:** entra com o token do ticket, consulta a **tabela de valores informativa** (tarifa AD-004), paga a estadia e, quando houver multa pendente no ticket, paga a cobrança adicional.
-- **Atendente:** entra com e-mail e senha, vê vagas ocupadas e disponíveis, **cadastra entrada ou registra saída por token**, e consulta veículos alocados (com busca local) na mesma tela.
+O backend expõe o ciclo completo do estacionamento (entrada, ticket por token, pagamento, multa,
+saída pela catraca, pátio e histórico), mas não tem interface. Sem frontend, o guarda não cadastra
+veículo, o cliente não consegue abrir o ticket pelo token impresso nem pagar, e a catraca não tem
+operador. São duas jornadas distintas sobre a mesma API: a do cliente, autenticada pelo token de 7
+caracteres do ticket, e a operacional do atendente.
 
-A interface não calcula valores, disponibilidade, vencimentos ou multas. A API é a fonte de verdade para essas informações.
+## Goals
 
-## 2. Objetivos
+- [x] Permitir que o cliente abra o ticket com o token e veja placa, tempo, valor e status
+- [x] Permitir que o cliente pague a estadia e, quando houver, a multa de 15%
+- [x] Permitir que o atendente cadastre a entrada de um veículo e registre a saída pela catraca
+- [x] Permitir que o atendente acompanhe o pátio e consulte o histórico por placa
+- [x] Manter a API como fonte de verdade de valor, status e janela de saída
+- [ ] Exibir tabela de valores e lotação a partir da API — bloqueado: o contrato não expõe nenhum dos dois (ver `TD-05`, `TD-07`)
 
-1. Permitir que o cliente consulte a tarifa (**R$ 5,00/h, mínimo 1 hora**) e pague a **estadia do ticket** (não há contratação de plano mensal/diária na API).
-2. Exibir ao cliente valores oficiais do ticket antes do pagamento; a tabela por hora é referência visual alinhada à AD-004.
-3. Permitir pagamento de uma cobrança adicional quando houver tempo excedente.
-4. Permitir que o atendente acompanhe vagas ocupadas/disponíveis, cadastre um veículo e consulte veículos alocados.
-5. Evitar duplicidade em registro de veículo e criação de pagamentos.
+## Out of Scope
 
-## 3. Fora de escopo
+| Feature | Reason |
+| ------- | ------ |
+| Catálogo de planos 1h / 5h / diária / mensal | A API não tem catálogo; a tarifa é única, R$ 5,00/h (AD-004). O protótipo AutoPark não corresponde ao domínio |
+| Checkout com provedor, QR Code ou código Pix | Pagamento é simulado: o POST já devolve `status: "pago"` (AD-009) |
+| Login com e-mail e senha de verdade | A API não tem usuário, JWT nem papel. A tela do atendente é casca de experiência (DEC-07) |
+| Cálculo de tarifa, multa ou tempo excedente no frontend | Regra de negócio é exclusiva do backend (AD-004, AD-011) |
+| Reserva de vaga, estorno, cancelamento e renovação | Não existem no contrato |
+| Hardware de cancela e leitura automática de placa | A catraca é um cliente HTTP de `POST /api/saida` |
+| Atualização em tempo real (polling, websocket) | A API não tem `updatedAt` nem canal de eventos (TD-06) |
 
-- Controle físico de cancela, leitura automática de placa ou hardware.
-- Criação administrativa de planos, preços, capacidade ou regras de multa.
-- Cálculo de tarifa, tempo excedente ou multa no frontend.
-- Estorno, cancelamento, renovação automática de plano mensal e conciliação financeira.
-- Reserva de vaga específica.
+---
 
-## 4. Premissas e decisões
+## Assumptions & Open Questions
 
-| ID | Decisão | Status |
-|---|---|---|
-| DEC-01 | Placa vem do ticket; cliente não cadastra veículo. | Fechada |
-| DEC-02 | Pagamento simulado (AD-009); QR/código só se o backend devolver. | Fechada |
-| DEC-03 | Tarifa por hora (AD-004); sem planos contratáveis na API. Tabela informativa no front (FE-DEC-08). | Fechada |
-| DEC-04 | Multa após janela de saída (`POST /api/saida`). | Fechada |
-| DEC-05 | Diária/mensal fora do MVP da API. | N/A |
-| DEC-06 | Saída via `POST /api/saida`; painel atendente inclui aba de saída assistida (FE-DEC-12). | Fechada |
-| DEC-07 | Sem JWT no backend; separação cliente/atendente na experiência. | Fechada |
-| FE-DEC-09 | Capacidade do pátio = 20 no painel até a API informar lotação. | Ativa |
-| FE-DEC-11 | Identificador na lista = token de 7 caracteres. | Ativa |
+| Assumption / decision | Chosen default | Rationale | Confirmed? |
+| --------------------- | -------------- | --------- | ---------- |
+| Framework | React + Vite + TypeScript | Scaffold já existente no repositório | y |
+| Roteamento | Navegação própria por `pathname` | Sem dependência nova; o projeto não tinha router (TD-02) | y |
+| Cliente HTTP | `fetch` nativo embrulhado em `criarHttp` | Sem Axios; o backend já padroniza o corpo de erro | y |
+| Estado | `useState` + hooks locais `useConsulta` / `useMutacao` | Escopo não justifica Zustand ou React Query | y |
+| Runner de teste | `node --test` com type stripping | Mesmo runner do backend; zero dependência nova | y |
+| DEC-01 — quem informa a placa | O atendente, em `POST /api/entrada`. O cliente nunca informa placa | O contrato só aceita placa na entrada | y |
+| DEC-02 — meio de pagamento | Simulado. O QR do enunciado é o `loginUrl` do ticket, não um QR de cobrança | AD-009, AD-012 | y |
+| DEC-03 — regra de início e fim do plano | Não há plano. Tarifa de R$ 5,00/h, teto, mínimo 1h, calculada só no backend | AD-004 | y |
+| DEC-04 — como o backend identifica excedente | Não é excedente de plano: `POST /api/saida` com a janela de 10 min vencida gera `multa_pendente` | AD-010, AD-011 | y |
+| DEC-05 — duração da diária | Não se aplica; não existe diária | AD-004 | y |
+| DEC-06 — quem registra a saída | A catraca, via `POST /api/saida`. O painel do atendente opera essa chamada | AD-010 | y |
+| DEC-07 — papéis que acessam o painel | Nenhum papel real: a API não tem JWT. A separação é de experiência (token para cliente, área própria para atendente) | Fora do escopo do backend | y |
+| TD-05 — origem da ocupação | Contagem de `GET /api/ativos`. Capacidade não existe no contrato | Único dado oficial disponível | y |
+| TD-07 — capacidade do pátio | Constante local `CAPACIDADE_PATIO = 20`, com `disponiveis` derivado no cliente | **Dívida consciente**: viola PARK-26. Registrado como AD-015 para a demonstração funcionar | y |
+| TD-08 — tabela de valores | Tabela de referência local derivada de AD-004 (5/10/15/20/25) | **Dívida consciente**: viola PARK-26. Registrado como AD-014 | y |
 
-Detalhes e rastreio: `tasks.md` (registro 2026-10-02).
+**Open questions:** none
 
-## 5. Requisitos funcionais
+---
 
-### Cliente — planos e pagamento
+## User Stories
 
-- **PARK-01** — O sistema deve apresentar a tabela de valores (períodos por hora com preço de referência AD-004) e o valor atual da estadia do ticket.
-- **PARK-02** — Cada plano deve exibir nome, duração/regra de validade, preço em BRL e condições fornecidas pela API.
-- **PARK-03** — O cliente deve conseguir selecionar um único plano disponível e avançar para a revisão.
-- **PARK-04** — A revisão deve apresentar placa (quando aplicável), plano, preço, validade e regras antes de iniciar o pagamento.
-- **PARK-05** — Ao confirmar, o sistema deve criar uma tentativa de pagamento uma única vez e indicar processamento até receber o resultado.
-- **PARK-06** — Quando a API confirmar o pagamento, o sistema deve exibir comprovante com identificador, plano, status e período de validade.
-- **PARK-07** — Se o pagamento falhar, expirar ou for recusado, o sistema deve preservar a seleção e disponibilizar nova tentativa sem confirmar a contratação.
-- **PARK-08** — Enquanto uma tentativa estiver em processamento, o sistema deve bloquear nova submissão da mesma tentativa.
-- **PARK-09** — Caso o pagamento exija QR Code/código Pix, a tela deve exibir exclusivamente os dados retornados pelo provedor/API e permitir copiá-los.
-- **PARK-10** — O cliente deve conseguir consultar suas contratações e respectivos status posteriormente.
+### P1: Abrir o ticket pelo token ⭐ MVP
 
-### Cliente — excedente e multa
+**User Story**: Como cliente, quero entrar com o token de 7 caracteres do papel para ver placa, tempo, valor e status da minha estadia.
 
-- **PARK-11** — Quando a API indicar excedente para uma permanência, o sistema deve exibir o tempo excedido, valor da cobrança e regra aplicável retornados pelo backend.
-- **PARK-12** — O cliente deve conseguir iniciar e concluir o pagamento da cobrança adicional por excedente.
-- **PARK-13** — O sistema não deve considerar a cobrança adicional quitada até receber confirmação da API.
-- **PARK-14** — Após pagamento confirmado, o comprovante da cobrança adicional deve identificar a permanência/veículo, valor, status e identificador retornado.
-- **PARK-15** — Se não houver excedente, a ação de pagar multa não deve ser apresentada.
+**Why P1**: É o login da jornada do cliente; sem ele nada mais é acessível.
 
-### Atendente — operação de vagas e veículos
+**Acceptance Criteria**:
 
-- **PARK-16** — O atendente deve visualizar vagas ocupadas (contagem oficial do pátio), disponíveis e capacidade total (ocupadas oficiais; capacidade/disponíveis conforme FE-DEC-09 até contrato de lotação).
-- **PARK-17** — O painel do atendente deve atualizar os indicadores a partir da fonte oficial; a estratégia de atualização (manual, polling ou tempo real) deve ser definida em DEC-06/contrato técnico.
-- **PARK-18** — O atendente deve poder cadastrar a entrada de um veículo informando placa válida e os dados obrigatórios definidos pela API.
-- **PARK-19** — Após registrar a entrada, o sistema deve apresentar confirmação com placa, identificador da alocação e data/hora retornados pela API.
-- **PARK-20** — O painel deve listar veículos alocados com identificador (token), placa, motorista e data/hora; permitir busca local por nome, token ou placa.
-- **PARK-21** — O sistema deve impedir registro duplicado de placa já alocada e apresentar uma mensagem compreensível quando a API recusar a operação.
-- **PARK-22** — Se não houver vagas disponíveis, o cadastro de entrada deve ficar indisponível e informar o motivo.
+1. WHEN the client submits a token matching `^[A-Z0-9]{7}$` THEN the app SHALL call `GET /api/tickets/:token` and render `placa`, `motoristaNome`, `status`, `duracaoMinutos` and `valorAtual` exactly as returned
+2. The app SHALL normalize the typed token to uppercase before calling the API
+3. IF the token does not match the 7-character format THEN the app SHALL block the request and show a recovery message without calling the API
+4. IF the API answers `404 TOKEN_INVALIDO` THEN the app SHALL keep the client on the login screen and show the message from the API
+5. WHILE the request is in flight the app SHALL show a loading state and SHALL NOT allow a second submission
 
-### Qualidade, segurança e recuperação
+**Independent Test**: Entrar com um token válido mostra o ticket; token de 6 caracteres não dispara chamada.
 
-- **PARK-23** — Fluxos protegidos devem exigir autenticação e autorização compatível com o papel cliente ou atendente.
-- **PARK-24** — Estados de carregamento, vazio e erro devem ter mensagens não técnicas e ação de recuperação quando aplicável.
-- **PARK-25** — Controles críticos devem ter navegação por teclado, nome acessível e mensagens de erro/status perceptíveis sem depender apenas de cor.
-- **PARK-26** — Preço, validade, disponibilidade, ocupação, excedente e status devem sempre refletir a API; dados locais não são fonte oficial.
-- **PARK-27** — Após recarregar a página durante um pagamento pendente, o sistema deve consultar o status da tentativa existente antes de permitir um novo pagamento.
+---
 
-## 6. Critérios de aceite por jornada
+### P1: Pagar a estadia ⭐ MVP
 
-### Cliente
+**User Story**: Como cliente, quero pagar o valor da estadia para liberar minha saída na catraca.
 
-1. Seleciona um plano ativo, revisa os dados e recebe um meio de pagamento ou confirmação real retornada pela API.
-2. Em pagamento confirmado, vê comprovante; em falha, consegue tentar novamente sem duplicidade.
-3. Quando houver excedente, vê a cobrança retornada pela API e só a considera quitada após confirmação.
+**Why P1**: É o ato central da jornada do cliente.
 
-### Atendente
+**Acceptance Criteria**:
 
-1. Visualiza ocupação e disponibilidade oficiais.
-2. Registra um veículo válido quando existe vaga.
-3. Vê na lista o veículo recém-alocado com ID, placa e data/hora.
-4. Não consegue registrar placa já alocada nem nova entrada quando não há vagas.
+1. WHEN the client confirms payment for a ticket with status `ativo` THEN the app SHALL call `POST /api/tickets/:token/pagamentos` and render `valorCobrado`, `pagoEm` and `janelaSaidaExpiraEm` from the response
+2. The app SHALL consider the stay paid only WHEN the API returns `status: "pago"`
+3. IF the ticket is already `pago` before the POST THEN the app SHALL skip the payment call and show the existing receipt
+4. IF the API answers `409 PAGAMENTO_JA_REALIZADO` THEN the app SHALL re-read the ticket and show the receipt instead of an error
+5. WHILE a payment is in flight the app SHALL reject a second submission so one confirmation never creates two payments
+6. IF the API answers with a status other than `pago` THEN the app SHALL NOT show a receipt and SHALL preserve the ability to retry
 
-## 7. Rastreabilidade inicial
+**Independent Test**: Clicar duas vezes em pagar gera um único POST; ticket já pago mostra comprovante sem novo POST.
 
-| Grupo | Requisitos |
-|---|---|
-| Cliente: plano e pagamento | PARK-01 a PARK-10 |
-| Cliente: excedente | PARK-11 a PARK-15 |
-| Atendente | PARK-16 a PARK-22 |
-| Qualidade e continuidade | PARK-23 a PARK-27 |
+---
 
-## 8. Aparência e estrutura
+### P1: Pagar a multa ⭐ MVP
 
-O protótipo define a cor e a organização das telas. Preços, placas, nomes de exemplo e QR Codes desenhados nele não são dados: esses valores continuam vindo da API.
+**User Story**: Como cliente, quero pagar a multa de 15% para reabrir a janela de saída.
 
-Tema claro, sem modo escuro. Página creme, faixa superior rosa com a marca **AutoPark** em branco, cartões rosa-claro com cantos arredondados e botões rosa com texto branco.
+**Why P1**: Sem isso o veículo fica preso depois da janela de 10 minutos expirar.
 
-| Token | Uso |
-|---|---|
-| `#f25497` | Faixa, botão principal, títulos do cartão e números de vagas |
-| `#fde7f1` | Fundo do cartão |
-| `#fff6e4` | Fundo da página |
-| `#3b2432` | Texto de título |
-| `#5c4552` | Texto corrente |
-| `#ffffff` | Linha de plano, campo e linha par da tabela |
+**Acceptance Criteria**:
 
-### Cliente
+1. WHEN the ticket status is `multa_pendente` and `valorMulta` is numeric THEN the app SHALL show the fine amount from the API and offer the payment action
+2. IF the ticket status is not `multa_pendente` THEN the app SHALL hide the fine payment action entirely
+3. WHEN the client confirms the fine payment THEN the app SHALL call `POST /api/tickets/:token/multas` and render `valorMulta`, `pagoEm` and the new `janelaSaidaExpiraEm`
+4. The app SHALL NOT compute the 15% itself and SHALL display only the `valorMulta` returned by the API
+5. IF the API answers `409 MULTA_NAO_PENDENTE` THEN the app SHALL re-read the ticket and show its current state
 
-Coluna estreita, no máximo cerca de 24rem, centralizada.
+**Independent Test**: Ticket `multa_pendente` mostra o botão e o valor da API; ticket `ativo` não mostra a ação.
 
-1. **`/` — Login.** Cartão com a marca circular, título AutoPark, texto “Acesse sua conta”, campo **Token**, botão **Entrar** e a dica “Use o token enviado para acessar o painel.” O token tem 7 letras ou números. 
-2. **`/cliente/planos` — Tabela de valores.** Abas **Tabela de valores** e **Pagamento**. Cartão com marca, subtítulo, regra “R$ 5,00 por hora. Mínimo de 1 hora.”, bloco **Sua estadia** (placa, tempo, valor, status do ticket) e linhas de referência 1h–5h.
-3. **`/cliente/pagamento` — Pagamento.** As mesmas abas e o mesmo cabeçalho do cartão. Campo **Token** somente leitura, botão **Gerar QR Code** e a orientação de uso do token. QR e **Copiar código** aparecem só quando a API devolve esses dados. **Gerar QR Code Multa** aparece só quando a API indica cobrança adicional.
+---
 
-A revisão do plano, quando existir, permanece dentro dessa coluna, sem uma terceira aba.
+### P1: Cadastrar entrada de veículo ⭐ MVP
 
-### Atendente
+**User Story**: Como atendente, quero cadastrar placa e motorista para gerar o ticket do cliente.
 
-Conteúdo mais largo, até cerca de 1120px.
+**Why P1**: É a porta de entrada de todo o fluxo.
 
-1. **`/atendimento` sem sessão — Login.** O mesmo cartão rosa, com **E-mail**, **Senha** e **Entrar**.
-2. **`/atendimento` com sessão — Painel.** Faixa AutoPark, saudação e **Sair**. Grade: **Vagas** | cartão **Operação** com abas **Cadastrar Veículo** e **Saída de Veículo**. Abaixo, **Veículos Alocados** com campo de busca e colunas Identificador (token), Placa, Motorista, Data.
+**Acceptance Criteria**:
 
-Em tela estreita, os dois cartões do painel ficam um abaixo do outro.
+1. WHEN the attendant submits a valid plate and driver name THEN the app SHALL call `POST /api/entrada` and render `id`, `placa`, `entradaEm` and `token` from the response
+2. IF the API answers `409 PLACA_JA_ATIVA` THEN the app SHALL show the API message and SHALL NOT present a confirmation
+3. IF the API answers `400 PLACA_INVALIDA` or `400 DADOS_INVALIDOS` THEN the app SHALL show the API message and keep the typed values for correction
+4. IF the response is missing `id`, `placa` or `entradaEm` THEN the app SHALL treat it as a failure and show no confirmation
+5. WHERE the yard has zero free spots the app SHALL disable the submit action and SHALL explain why
+
+**Independent Test**: Placa duplicada mostra a mensagem da API e nenhuma confirmação.
+
+---
+
+### P1: Registrar saída na catraca ⭐ MVP
+
+**User Story**: Como atendente operando a catraca, quero validar o token na saída para liberar ou barrar o veículo.
+
+**Why P1**: Fecha o ciclo operacional do enunciado.
+
+**Acceptance Criteria**:
+
+1. WHEN the attendant submits a token to `POST /api/saida` and the API returns `200` THEN the app SHALL render `saidaEm`, `duracaoMinutos` and `valorCobrado` and SHALL report the stay as `finalizado`
+2. IF the API answers `402 PAGAMENTO_PENDENTE` THEN the app SHALL block the exit and show that payment is required
+3. IF the API answers `409 JANELA_SAIDA_EXPIRADA` THEN the app SHALL block the exit and show the `valorMulta` returned in the error body
+4. IF the API answers `402 MULTA_PENDENTE` THEN the app SHALL block the exit and show the pending fine
+5. The app SHALL NOT decide by itself whether the exit window is still open
+
+**Independent Test**: Saída de ticket não pago devolve bloqueio com a mensagem da API.
+
+---
+
+### P2: Acompanhar o pátio
+
+**User Story**: Como atendente, quero ver os veículos no pátio e quantas vagas estão ocupadas.
+
+**Why P2**: Operação de apoio; não bloqueia entrada nem saída.
+
+**Acceptance Criteria**:
+
+1. WHEN the attendant opens the panel THEN the app SHALL call `GET /api/ativos` and list `id`, `placa` and `entradaEm` for every record returned
+2. The app SHALL derive `ocupadas` from the length of the `GET /api/ativos` array, which is the only official occupancy signal
+3. WHEN the array is empty THEN the app SHALL show an empty state with a retry action
+4. The app SHALL refresh the indicators only on an explicit user action, since the contract has no change signal
+5. WHERE total capacity is displayed the app SHALL label it as a local configuration value, because the API does not expose capacity
+
+**Independent Test**: Pátio vazio mostra estado vazio; dois ativos mostram duas linhas e ocupadas igual a 2.
+
+---
+
+### P2: Consultar a tabela de valores
+
+**User Story**: Como cliente, quero ver quanto custa a estadia antes de pagar.
+
+**Why P2**: Transparência; o valor efetivo já vem do ticket.
+
+**Acceptance Criteria**:
+
+1. The app SHALL present the reference table derived from AD-004 (R$ 5,00 per hour, minimum one hour) labelled as reference, not as a quote
+2. The app SHALL NOT present the reference table as the amount due; the amount due SHALL always be `valorAtual` or `valorCobrado` from the API
+3. IF the tariff in AD-004 changes THEN the reference table SHALL be updated in the same commit as the decision record
+
+**Independent Test**: A tela de valores mostra 5/10/15/20/25 e o pagamento cobra o `valorAtual` do ticket, não a linha escolhida.
+
+---
+
+### P3: Histórico por placa
+
+**User Story**: Como atendente, quero consultar estadias finalizadas de uma placa.
+
+**Why P3**: Consulta útil na demonstração, sem bloquear o fluxo.
+
+**Acceptance Criteria**:
+
+1. WHEN the attendant queries a plate THEN the app SHALL call `GET /api/historico/:placa` and list the returned records
+2. IF the plate never parked THEN the app SHALL show an empty state
+
+**Independent Test**: Finalizar uma estadia e consultar a placa mostra um registro.
+
+---
+
+### P3: Acessibilidade e separação de áreas
+
+**User Story**: Como qualquer usuário, quero operar por teclado e não cair na área do outro perfil.
+
+**Why P3**: Qualidade transversal.
+
+**Acceptance Criteria**:
+
+1. IF a client session requests an attendant route THEN the app SHALL deny access and redirect to the client start route
+2. IF an attendant session requests a client payment route THEN the app SHALL deny access and redirect to the attendant panel
+3. The app SHALL mark the current navigation item with `aria-current="page"`
+4. The app SHALL announce errors through `role="alert"` and transient status through `role="status"`
+5. The app SHALL NOT convey status through color alone
+
+**Independent Test**: Sessão de cliente em `/atendimento` é negada; o item de navegação ativo carrega `aria-current`.
+
+---
+
+## Edge Cases
+
+- IF the network request throws THEN the app SHALL show a non-technical message with a retry action
+- IF the API answers `503 SERVICO_INDISPONIVEL` THEN the app SHALL show that the service is temporarily unavailable
+- WHEN the client reloads during a pending payment THEN the app SHALL re-read the ticket before offering to pay again
+- WHEN the token arrives in the URL as `?token=` THEN the app SHALL start the client session from it
+- WHEN the viewport is narrow THEN the panel cards SHALL stack and the table SHALL scroll horizontally
+
+---
+
+## Requirement Traceability
+
+| Requirement ID | Story | Phase | Status |
+| -------------- | ----- | ----- | ------ |
+| PARK-01 | P2: Tabela de valores | Execute | Verified |
+| PARK-02 | P2: Tabela de valores | Execute | Verified |
+| PARK-03 | P2: Tabela de valores | Execute | Verified |
+| PARK-04 | P1: Pagar a estadia | Execute | Verified |
+| PARK-05 | P1: Pagar a estadia | Execute | Verified |
+| PARK-06 | P1: Pagar a estadia | Execute | Verified |
+| PARK-07 | P1: Pagar a estadia | Execute | Verified |
+| PARK-08 | P1: Pagar a estadia | Execute | Verified |
+| PARK-09 | Out of scope (AD-009) | Specify | Pending |
+| PARK-10 | P1: Abrir o ticket | Execute | Verified |
+| PARK-11 | P1: Pagar a multa | Execute | Verified |
+| PARK-12 | P1: Pagar a multa | Execute | Verified |
+| PARK-13 | P1: Pagar a multa | Execute | Verified |
+| PARK-14 | P1: Pagar a multa | Execute | Verified |
+| PARK-15 | P1: Pagar a multa | Execute | Verified |
+| PARK-16 | P2: Acompanhar o pátio | Execute | Implementing |
+| PARK-17 | P2: Acompanhar o pátio | Execute | Verified |
+| PARK-18 | P1: Cadastrar entrada | Execute | Verified |
+| PARK-19 | P1: Cadastrar entrada | Execute | Verified |
+| PARK-20 | P2: Acompanhar o pátio | Execute | Verified |
+| PARK-21 | P1: Cadastrar entrada | Execute | Verified |
+| PARK-22 | P1: Cadastrar entrada | Execute | Implementing |
+| PARK-23 | P3: Acessibilidade e áreas | Execute | Implementing |
+| PARK-24 | P3: Acessibilidade e áreas | Execute | Verified |
+| PARK-25 | P3: Acessibilidade e áreas | Execute | Implementing |
+| PARK-26 | P2: Tabela de valores | Execute | Implementing |
+| PARK-27 | P1: Pagar a estadia | Execute | Verified |
+| PARK-28 | P1: Registrar saída | Execute | Verified |
+| PARK-29 | P3: Histórico por placa | Execute | Verified |
+
+**Coverage:** 29 total, 28 mapped to stories, 1 explicitly out of scope (PARK-09).
+
+---
+
+## Known Gaps
+
+Os cinco requisitos em `Implementing` têm a lacuna nomeada em `validation.md`:
+
+| Requisito | Lacuna |
+| --------- | ------ |
+| PARK-16 | `capacidade` e `disponiveis` vêm da constante local `CAPACIDADE_PATIO`, não da API (AD-015) |
+| PARK-22 | O bloqueio por lotação depende dessa constante, então não reflete a lotação real |
+| PARK-23 | A negação de cliente para rota de atendente não tem teste: mutante sobreviveu |
+| PARK-25 | `aria-current` é verificado por regex no código-fonte, não por comportamento: mutante sobreviveu |
+| PARK-26 | Preço de referência e lotação são locais; o restante (valor, status, janela) respeita a API |
+
+---
+
+## Success Criteria
+
+- [x] O cliente abre o ticket pelo token, paga a estadia e paga a multa quando existe
+- [x] O atendente cadastra entrada, registra saída e acompanha o pátio
+- [x] Valor cobrado, status e janela de saída vêm sempre da API
+- [x] Nenhuma tela chama endpoint inexistente
+- [ ] Preço de referência e lotação virão da API quando o contrato expuser catálogo e capacidade
+- [ ] PARK-23 e PARK-25 cobertos por teste de comportamento que mate os mutantes registrados
