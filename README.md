@@ -49,18 +49,21 @@ docker compose up -d
 
 Impressão do ticket e QR são pressuposto: o cadastro devolve `token` e `loginUrl`.
 
-## Deploy no Vercel
+## Deploy no Render
 
-O Vercel sobe o backend como container a partir de `backend/Dockerfile.vercel` (`vercel.json` na raiz). O Postgres **não** vai no Vercel: use um banco hospedado (Neon, Supabase, Railway) e configure:
+O arquivo `render.yaml` configura um Web Service Docker para a API usando `backend/` como diretório raiz e `backend/Dockerfile`. O frontend ainda não está implementado como aplicação executável; neste momento, o Blueprint publica somente o backend.
 
-- `DATABASE_URL`
-- `FRONTEND_URL`
-- `CORS_ORIGIN` (pode ser `*`)
+No primeiro deploy, informe no Render:
 
-```bash
-npx vercel login
-npx vercel --prod
-```
+- `DATABASE_URL` (obrigatória): URL de conexão do PostgreSQL hospedado. Se o banco também estiver no Render, use a URL interna fornecida pelo banco.
+- `FRONTEND_URL`: URL do frontend usada para montar links de acesso; enquanto o frontend não estiver publicado, pode usar `http://localhost:5173` para desenvolvimento ou ajustar depois.
+- `CORS_ORIGIN`: origem permitida para chamadas do frontend; aceita múltiplas origens separadas por vírgula ou `*`.
+
+As variáveis `PORT` e `NODE_ENV` não precisam ser cadastradas manualmente: a imagem define `10000` como fallback e `production`, e o Render fornece a porta do serviço. Não configure `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER` ou `POSTGRES_PASSWORD` no serviço da API; elas são usadas somente pelo PostgreSQL local do Docker Compose.
+
+O `render.yaml` marca as variáveis como `sync: false`; portanto, elas devem ser preenchidas no painel/fluxo do Blueprint. O `.env.example` serve como referência local; não é importado automaticamente pelo Render.
+
+O health check está configurado em `/api/health` e verifica também a conexão com o banco.
 
 Local com API em container:
 

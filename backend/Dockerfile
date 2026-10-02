@@ -16,7 +16,7 @@ WORKDIR /app
 COPY --from=production-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package.json ./
-ENV NODE_ENV=production PORT=80
-EXPOSE 80
+ENV NODE_ENV=production PORT=10000
+EXPOSE 10000
 USER node
 CMD ["node", "dist/index.js"]
