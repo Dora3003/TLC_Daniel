@@ -2,11 +2,11 @@
 
 ## Visão Geral
 
-Sistema de controle de estacionamento com duas frentes: guarita (cadastro e consulta) e cliente (login por token, pagamento e multa). A catraca libera a saída só com pagamento válido nos últimos 10 minutos.
+Sistema de controle de estacionamento com duas frentes: guarita (cadastro, pátio e catraca) e cliente (login por token, pagamento e multa). A catraca libera a saída só com pagamento válido nos últimos 10 minutos.
 
 | Camada       | Tecnologia                      |
 | ------------ | ------------------------------- |
-| Frontend     | React + HTML/CSS                |
+| Frontend     | React + Vite + TypeScript       |
 | Backend      | Node.js + Express + TypeScript  |
 | Persistência | PostgreSQL + Docker + DBeaver   |
 
@@ -17,7 +17,11 @@ Sistema de controle de estacionamento com duas frentes: guarita (cadastro e cons
 ├── docker-compose.yml
 ├── .env.example
 ├── database/
-├── .specs/STATE.md
+├── .specs/
+│   ├── STATE.md
+│   ├── LESSONS.md        # gerado por lessons.py — não editar à mão
+│   ├── lessons.json
+│   └── _tlc/             # validadores determinísticos da skill (versionados)
 ├── backend/
 │   ├── .specs/features/
 │   └── src/
@@ -43,6 +47,10 @@ Sistema de controle de estacionamento com duas frentes: guarita (cadastro e cons
 | AD-011 | Multa de 15% sobre `valorCobrado` se a janela expirar | Enunciado do case | 2026-09-24 | active |
 | AD-012 | Impressão e QR são pressuposto; API devolve `token` e `loginUrl` | Fora do escopo de hardware | 2026-09-24 | active |
 | AD-013 | Status: `ativo` → `pago` → `finalizado` ou `multa_pendente` | Máquina de estados do ticket | 2026-09-24 | active |
+| AD-014 | Tabela de valores do cliente é referência local derivada de AD-004 | A API não expõe catálogo. Dívida consciente: contradiz PARK-26 e sai quando o backend expuser a tarifa | 2026-10-02 | active |
+| AD-015 | Capacidade do pátio é constante local `CAPACIDADE_PATIO = 20` | A API só informa ocupação pela contagem de `GET /api/ativos`. Dívida consciente: contradiz PARK-26 | 2026-10-02 | active |
+| AD-016 | Frontend não chama endpoint inexistente; divergência de contrato virá para esta tabela | Corrige o desvio de `GET /api/planos` e `GET /api/ocupacao` detectado na verificação | 2026-10-02 | active |
+| AD-017 | Validadores da skill versionados em `.specs/_tlc/` | Gates reproduzíveis por qualquer pessoa, não só na máquina de quem rodou | 2026-10-02 | active |
 
 ## Features
 
@@ -50,22 +58,40 @@ Sistema de controle de estacionamento com duas frentes: guarita (cadastro e cons
 | ------- | ---- | ------ | ----------- |
 | Persistência de Dados | `backend/.specs/features/persistencia-dados/` | Em andamento | João (persist.) |
 | Backend API | `backend/.specs/features/backend-api/` | Done | Gustavo |
-| Frontend Guarita | `frontend/.specs/features/frontend-guarita/` | Pending | — |
+| Frontend Guarita | `frontend/.specs/features/frontend-guarita/` | Em verificação | Heloisa |
+
+## Estado dos gates (02/10/2026)
+
+| Feature | `validate_spec` | `validate_tasks` | `validate_state` |
+| ------- | --------------- | ---------------- | ---------------- |
+| backend-api | 0 erros | 0 erros, 2 avisos | PASS |
+| persistencia-dados | 0 erros, 1 aviso | fase omitida (auto-sizing) | sem `validation.md` |
+| frontend-guarita | 0 erros | 0 erros, 2 avisos | FAIL — veredicto FAIL em `validation.md` |
+
+Testes: 31 no backend, 98 no frontend, todos passando.
 
 ## Handoff
 
-**Última atualização:** 2026-09-24
+**Última atualização:** 2026-10-02
 
-**Branch:** feat/backend-api
+**Branch:** `main`
 
 **Concluído:**
-- Spec TLC da API (token, pagamento, multa, catraca)
+- Backend API completo e verificado: 29 requisitos em EARS, `validation.md` com evidência `file:line`
 - Schema PostgreSQL com token e estados de pagamento
-- API Express: entrada, ticket, pagamento, multa, saída, ativos, histórico, health
-- 30 testes de domínio, serviço e HTTP
+- Frontend das duas jornadas: ticket por token, pagamento, multa, entrada, pátio, saída e histórico
+- Alinhamento de contrato em `7f6f607`: removidas as chamadas a `/api/planos`, `/api/planos/:id` e `/api/ocupacao`, que não existem no backend
+- Specs do frontend revisadas: `spec.md` e `tasks.md` passam nos gates estruturais
+- Verificação independente do frontend em `validation.md`: veredicto FAIL, 11 mutantes injetados, 2 sobreviveram
+- Lições registradas em `.specs/LESSONS.md` via `lessons.py`
+- Validadores da skill versionados em `.specs/_tlc/`
+- Registro de gestão de demandas consolidado em `GESTAO-DEMANDAS.md`
 
 **Próximo passo:**
-- Frontend da guarita e do cliente consumirem os contratos acima
-- Recriar volume Docker se o banco ainda tiver o schema antigo (`docker compose down -v`)
+- Fechar G1 de `validation.md`: teste de negação para `/atendimento?token=...` em `src/auth/acesso.test.ts`
+- Fechar G2: extrair `ehPaginaAtual` como função pura e testar comportamento em vez de regex no fonte
+- Re-rodar o Verifier para mover o veredicto de FAIL para PASS
+- Escrever `validation.md` de `persistencia-dados` ou mover a feature para `Done` só depois disso
 
-**Bloqueios:** nenhum
+**Bloqueios:**
+- `capacidade` e tabela de valores seguem locais (AD-014, AD-015) até o backend expor catálogo e lotação. Não é bloqueio de demonstração, é dívida registrada.
